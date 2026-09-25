@@ -3,6 +3,11 @@
 // As duas metricas aparecem lado a lado e NUNCA combinadas: ISC e o que o
 // LIDER acha que o cliente sente; NPS e o que o CLIENTE respondeu. Somar ou
 // mediar as duas produziria um numero que nao significa nada.
+//
+// Na MESMA escala (0 a 10), para a comparacao ser direta (definicao do PMO):
+//  - ISC = media de todas as notas ISC que o lider deu ao projeto;
+//  - NPS = media das respostas da pergunta 4 ("o quanto nos indicaria"),
+//    so as validas (0 a 10).
 
 import { json, rotaApi, uuidOpcional } from "@/lib/http";
 import { type FiltroValor, selecionar, termoBusca } from "@/lib/db";
@@ -29,7 +34,14 @@ interface RegistroIsc {
 
 interface RespostaCliente {
   projeto_id: string;
+  nota_q4: number | string | null;
   [chave: string]: unknown;
+}
+
+/** Media com 1 casa decimal; null se nao houver valor. */
+function media(valores: number[]): number | null {
+  if (!valores.length) return null;
+  return Math.round((valores.reduce((s, v) => s + v, 0) / valores.length) * 10) / 10;
 }
 
 export async function GET(req: Request) {
@@ -90,6 +102,10 @@ export async function GET(req: Request) {
     const itens = (projetos || []).map((p) => {
       const historico = iscPorProjeto.get(p.id) || [];
       const avaliacoes = respPorProjeto.get(p.id) || [];
+      const notasIsc = historico.map((h) => Number(h.nota)).filter((n) => Number.isFinite(n));
+      const notasQ4 = avaliacoes
+        .map((r) => (r.nota_q4 === null || r.nota_q4 === undefined ? NaN : Number(r.nota_q4)))
+        .filter((n) => Number.isFinite(n) && n >= 0 && n <= 10);
       return {
         projeto: {
           id: p.id,
@@ -98,11 +114,16 @@ export async function GET(req: Request) {
           cliente_nome: p.cliente_nome,
           lider_nome: p.lider_nome,
         },
-        // ISC: percepcao INTERNA do lider
+        // ISC: percepcao INTERNA do lider — media de todas as notas dadas
+        isc_media: media(notasIsc),
+        isc_avaliacoes: notasIsc.length,
         isc_atual: historico.length ? Number(historico[0].nota) : null,
         isc_competencia: historico.length ? historico[0].competencia : null,
         isc_historico: historico,
         // NPS: percepcao do CLIENTE — metrica distinta, nunca combinada
+        // NPS (cliente): media das respostas da pergunta 4, escala 0 a 10
+        q4_media: media(notasQ4),
+        q4_respostas: notasQ4.length,
         nps_projeto: p.nps_projeto === null ? null : Number(p.nps_projeto),
         respostas_cliente: avaliacoes,
         total_respostas: avaliacoes.length,

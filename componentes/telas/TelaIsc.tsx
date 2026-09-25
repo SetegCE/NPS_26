@@ -474,22 +474,22 @@ function Historico({ projeto, aoFechar }: { projeto: ProjetoIsc; aoFechar: () =>
 
 interface ItemComparativo {
   projeto: { id: string; nome: string; cliente_nome: string | null; lider_nome: string | null };
-  isc_atual: number | null;
-  isc_competencia: string | null;
-  nps_projeto: number | null;
-  total_respostas: number;
+  isc_media: number | null;
+  isc_avaliacoes: number;
+  q4_media: number | null;
+  q4_respostas: number;
 }
 
+const umaCasa = (n: number) => n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
 /**
- * Compara as duas escalas apenas para leitura humana: o ISC vai de 0 a 10 e o
- * NPS de -100 a 100. A frase e descritiva e NAO entra em calculo nenhum — a
- * conversao existe so para dizer se as duas percepcoes apontam para o mesmo
- * lado.
+ * As duas medias estao na mesma escala (0 a 10): media do ISC dado pelo lider
+ * e media da pergunta 4 respondida pelo cliente. A frase e so leitura humana
+ * e NAO entra em calculo nenhum.
  */
-function descreverDivergencia(isc: number, nps: number): string {
-  const npsEmDez = (nps + 100) / 20;
-  const delta = isc - npsEmDez;
-  if (Math.abs(delta) < 1.5) return "Percepção interna alinhada à do cliente.";
+function descreverDivergencia(isc: number, q4: number): string {
+  const delta = isc - q4;
+  if (Math.abs(delta) < 1) return "Percepção interna alinhada à do cliente.";
   return delta > 0
     ? "Atenção: o líder percebe o cliente mais satisfeito do que o próprio cliente indicou."
     : "O cliente avaliou melhor do que a percepção interna do líder.";
@@ -514,14 +514,12 @@ function Comparativo({
       .catch((e) => setErro(e instanceof ErroApi ? e.message : "Falha ao carregar o comparativo."));
   }, [lider, cliente]);
 
-  const comAlgo = (dados?.itens || []).filter(
-    (i) => i.isc_atual !== null || i.total_respostas > 0
-  );
+  const comAlgo = (dados?.itens || []).filter((i) => i.isc_media !== null || i.q4_respostas > 0);
 
   return (
     <Modal
       titulo="ISC x NPS"
-      subtitulo="Duas métricas distintas: percepção interna do líder e percepção informada pelo cliente."
+      subtitulo="Na mesma escala (0 a 10): média do ISC dado pelo líder x média da pergunta 4 respondida pelo cliente."
       largo
       aoFechar={aoFechar}
       acoes={[{ rotulo: "Fechar", classe: "btn-secondary", onClick: aoFechar }]}
@@ -547,22 +545,30 @@ function Comparativo({
                 </div>
                 <div className="comparativo-metricas">
                   <div className="metrica-bloco isc">
-                    <div className="m-rotulo">ISC (líder)</div>
-                    <div className="m-valor">{i.isc_atual ?? "—"}</div>
+                    <div className="m-rotulo">ISC (média do líder)</div>
+                    <div className="m-valor">{i.isc_media !== null ? umaCasa(i.isc_media) : "—"}</div>
                     <div className="m-obs">
-                      {i.isc_competencia ? formatarCompetencia(i.isc_competencia) : "sem registro"}
+                      {i.isc_avaliacoes
+                        ? `${i.isc_avaliacoes} avaliação(ões) mensal(is)`
+                        : "sem registro"}
                     </div>
                   </div>
                   <div className="comparativo-vs">x</div>
                   <div className="metrica-bloco nps">
-                    <div className="m-rotulo">NPS (cliente)</div>
-                    <div className="m-valor">{i.nps_projeto ?? "—"}</div>
-                    <div className="m-obs">{i.total_respostas} resposta(s)</div>
+                    <div className="m-rotulo">NPS (pergunta 4)</div>
+                    <div className="m-valor">{i.q4_media !== null ? umaCasa(i.q4_media) : "—"}</div>
+                    <div className="m-obs">
+                      {i.q4_respostas ? `média de ${i.q4_respostas} resposta(s)` : "sem resposta"}
+                    </div>
                   </div>
                 </div>
-                {i.isc_atual !== null && i.nps_projeto !== null ? (
+                {i.isc_media !== null && i.q4_media !== null ? (
                   <div className="comparativo-nota">
-                    {descreverDivergencia(i.isc_atual, i.nps_projeto)}
+                    {descreverDivergencia(i.isc_media, i.q4_media)}
+                    {" "}
+                    <span className="td-sub">
+                      (diferença de {umaCasa(Math.abs(i.isc_media - i.q4_media))} ponto(s))
+                    </span>
                   </div>
                 ) : null}
               </div>
