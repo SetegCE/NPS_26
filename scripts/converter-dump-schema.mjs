@@ -36,10 +36,10 @@ export function converterEstrutura(texto, schema = "nps") {
 
   sql = sql.replace(/\bpublic\./g, `${schema}.`);
   sql = sql.replace(
-    /SET search_path TO 'public', 'extensions'/g,
+    /SET search_path TO 'public', 'extensions'/gi,
     `SET search_path TO '${schema}', 'extensions', 'public'`
   );
-  sql = sql.replace(/SET search_path TO 'public'/g, `SET search_path TO '${schema}', 'extensions', 'public'`);
+  sql = sql.replace(/SET search_path TO 'public'/gi, `SET search_path TO '${schema}', 'extensions', 'public'`);
   // Forma sem aspas, usada nas migrations escritas a mao (ex.: a 13) e no topo
   // de banco/estrutura.sql.
   sql = sql.replace(/set search_path = public\b/gi, `set search_path = ${schema}, extensions, public`);

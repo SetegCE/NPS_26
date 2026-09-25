@@ -24,6 +24,7 @@ const MENU_PMO: Entrada[] = [
   { rota: "/dashboard", rotulo: "Dashboard", icone: "dashboard" },
   { rota: "/operacao-ciclo", rotulo: "Operacao do Ciclo", icone: "operacao" },
   { rota: "/isc", rotulo: "ISC", icone: "isc" },
+  { rota: "/planos-acao", rotulo: "Planos de Acao", icone: "plano" },
   { secao: "Cadastros" },
   { rota: "/projetos", rotulo: "Projetos", icone: "projetos" },
   { rota: "/respondentes", rotulo: "Respondentes", icone: "respondentes" },
@@ -42,6 +43,7 @@ const MENU_LIDER: Entrada[] = [
   { rota: "/meus-projetos", rotulo: "Meus Projetos", icone: "projetos" },
   { rota: "/pesquisas", rotulo: "Pesquisas", icone: "pesquisas" },
   { rota: "/isc", rotulo: "ISC", icone: "isc" },
+  { rota: "/planos-acao", rotulo: "Planos de Acao", icone: "plano" },
   { rota: "/resultados", rotulo: "Resultados", icone: "resultados" },
 ];
 

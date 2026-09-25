@@ -21,8 +21,9 @@ npm run banco:exportar            # gera backup/dados-nps-AAAA-MM-DD.sql
 npm run banco:restaurar -- backup\dados-nps-AAAA-MM-DD.sql
 ```
 
-O `banco:restaurar` converte a estrutura e a migration 13 para o schema do
-`.env` em memória, carrega estrutura → freio de login → dados numa ordem que
+O `banco:restaurar` converte a estrutura e as migrations 13 (freio de login) e
+20 (plano de ação) para o schema do `.env` em memória, carrega estrutura →
+migrations → dados numa ordem que
 respeita as chaves estrangeiras e confere a contagem de cada tabela. Ele
 **recusa** rodar se o schema já tiver tabelas do NPS.
 

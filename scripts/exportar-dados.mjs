@@ -46,6 +46,8 @@ const TABELAS = [
   "auditoria_nps",
   "pesquisas_nps",
   "respostas_nps",
+  "planos_acao_nps",
+  "plano_acao_itens_nps",
 ];
 const COM_TRIGGER = [
   "ciclos_nps",
@@ -59,6 +61,8 @@ const COM_TRIGGER = [
   "respondentes_nps",
   "respostas_nps",
   "usuarios_nps",
+  "planos_acao_nps",
+  "plano_acao_itens_nps",
 ];
 
 // Colunas calculadas (GENERATED ... STORED): o Postgres recalcula na carga e

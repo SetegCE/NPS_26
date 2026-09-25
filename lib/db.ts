@@ -158,6 +158,17 @@ const MENSAGENS: Record<string, string> = {
   OBSERVACAO_OBRIGATORIA_PARA_OUTRO: "Informe a observacao quando o motivo for Outro.",
   STATUS_INVALIDO: "Status invalido.",
   DECISOES_INVALIDAS: "Lista de decisoes invalida.",
+  PROJETO_NAO_ELEGIVEL_NO_CICLO: "O projeto nao e elegivel neste ciclo.",
+  PROJETO_SEM_RESPOSTA_NO_CICLO: "O projeto ainda nao recebeu resposta neste ciclo.",
+  ASSUNTO_E_OBJETIVO_OBRIGATORIOS: "Informe o assunto e o objetivo do plano de acao.",
+  PLANO_COM_ACOES: "O plano ja tem acoes lancadas; remova-as antes de marcar como nao passivel.",
+  PLANO_NAO_ENCONTRADO: "Plano de acao nao encontrado.",
+  PROJETO_SEM_PLANO_DE_ACAO: "Este projeto foi marcado como nao passivel de plano de acao.",
+  PLANO_ENCERRADO: "Este plano de acao esta encerrado. Reabra-o para alterar.",
+  O_QUE_OBRIGATORIO: "Informe o que sera feito.",
+  SITUACAO_INVALIDA: "Situacao invalida.",
+  VALOR_INVALIDO: "Valor invalido.",
+  ACAO_NAO_ENCONTRADA: "Acao nao encontrada.",
 };
 
 function traduzirMensagem(codigo: string): string {

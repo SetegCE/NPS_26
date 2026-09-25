@@ -90,8 +90,8 @@ npm run banco:restaurar -- backupdados-nps-AAAA-MM-DD.sql
 npm run check
 ```
 
-Carrega a estrutura (`banco/estrutura.sql`), a migration 13 (freio de força
-bruta do login) e os dados, convertendo tudo para o schema do `DATABASE_SCHEMA`,
+Carrega a estrutura (`banco/estrutura.sql`), as migrations 13 (freio de força
+bruta do login) e 20 (plano de ação) e os dados, convertendo tudo para o schema do `DATABASE_SCHEMA`,
 e confere a contagem de cada tabela. Recusa rodar se o schema já tiver tabelas
 do NPS.
 

@@ -153,3 +153,27 @@ export function ordenacao(
   const desc = (query.get("ordem") || "").toLowerCase() === "desc";
   return { campo, ascending: !desc };
 }
+
+/** Data "AAAA-MM-DD" opcional (vazio = null). Recusa data impossivel (31/02). */
+export function dataOpcional(valor: unknown, campo: string): string | null {
+  if (valor === undefined || valor === null || valor === "") return null;
+  const v = String(valor).trim();
+  const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const d = m ? new Date(`${v}T00:00:00Z`) : null;
+  if (!m || !d || Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== v) {
+    throw erro(400, "DATA_INVALIDA", `Campo "${campo}" deve ser uma data valida (AAAA-MM-DD).`);
+  }
+  return v;
+}
+
+/** Valor em reais opcional, >= 0, com ate 2 casas. Aceita "1.234,56" e "1234.56". */
+export function valorOpcional(valor: unknown, campo: string): number | null {
+  if (valor === undefined || valor === null || valor === "") return null;
+  let t = String(valor).trim().replace(/\s|R\$/g, "");
+  if (t.includes(",")) t = t.replace(/\./g, "").replace(",", ".");
+  const n = Number(t);
+  if (!Number.isFinite(n) || n < 0 || n > 999_999_999_999) {
+    throw erro(400, "VALOR_INVALIDO", `Campo "${campo}" deve ser um valor maior ou igual a zero.`);
+  }
+  return Math.round(n * 100) / 100;
+}

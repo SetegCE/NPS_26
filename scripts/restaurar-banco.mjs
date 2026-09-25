@@ -2,6 +2,7 @@
 //
 //   1. banco/estrutura.sql      (tabelas, funcoes, views, triggers)
 //   2. migration 13             (freio de forca bruta do login)
+//      migration 20             (plano de acao)
 //   3. arquivo de dados         (gerado por scripts/exportar-dados.mjs)
 //
 // Converte para o schema do .env (DATABASE_SCHEMA, ex. "nps") em memoria e
@@ -45,6 +46,7 @@ const ler = (rel) => fs.readFileSync(path.join(RAIZ, rel), "utf8");
 const etapas = [
   ["estrutura", converterEstrutura(ler("banco/estrutura.sql"), schema).sql],
   ["freio de login (migration 13)", converterEstrutura(ler("supabase/migrations/13_freio_de_forca_bruta_no_banco.sql"), schema).sql],
+  ["plano de ação (migration 20)", converterEstrutura(ler("supabase/migrations/20_plano_de_acao.sql"), schema).sql],
   ["dados", dados],
 ];
 
