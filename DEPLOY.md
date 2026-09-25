@@ -21,7 +21,7 @@ A estrutura do banco está em `banco/estrutura.sql`.
 
 ```powershell
 cd "C:\Users\ricardo.ti\dev\SETEG MEMORIA"
-git clone https://github.com/lais-seteg/NPS_26.git
+git clone https://github.com/SetegCE/NPS_26.git
 cd NPS_26
 npm install
 ```
