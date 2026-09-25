@@ -10,9 +10,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CampoArea, CampoSelect, CampoTexto } from "@/componentes/Campo";
-import { GradeDetalhes } from "@/componentes/Detalhes";
 import { Aviso, EstadoCarregando, EstadoErro } from "@/componentes/Estados";
 import { Confirmacao, Modal } from "@/componentes/Modal";
+import { usePaginacaoLocal } from "@/componentes/Paginacao";
 import { BotaoAcao, Tabela, type Coluna } from "@/componentes/Tabela";
 import { BarraFiltros, CabecalhoTela, FiltroSelect, Selo } from "@/componentes/Tela";
 import { useToast } from "@/componentes/Toast";
@@ -113,17 +113,6 @@ const reais = (v: number | null) =>
 function SeloPlano({ situacao }: { situacao: string }) {
   const s = SITUACAO_PLANO[situacao] || { rotulo: situacao, tom: "neutro" as const };
   return <Selo tom={s.tom}>{s.rotulo}</Selo>;
-}
-
-function SeloAcao({ acao }: { acao: Acao }) {
-  const s = SITUACAO_ACAO[acao.situacao_efetiva] || SITUACAO_ACAO.no_prazo;
-  // Marcada "no prazo" mas vencida: explica por que aparece atrasada.
-  const automatico = acao.situacao_efetiva === "atrasado" && acao.situacao !== "atrasado";
-  return (
-    <span title={automatico ? "Prazo vencido e ação não concluída" : undefined}>
-      <Selo tom={s.tom}>{s.rotulo}</Selo>
-    </span>
-  );
 }
 
 // ─── Tela ──────────────────────────────────────────────────────────────────
@@ -540,44 +529,8 @@ function ModalPlano({
   const plano = dados?.plano;
   const aberto = plano ? !plano.encerrado_em : false;
 
-  const colunas: Coluna<Acao>[] = [
-    { chave: "ordem", rotulo: "Item", classe: "td-num", render: (a) => a.ordem },
-    {
-      chave: "o_que",
-      rotulo: "O que fazer?",
-      render: (a) => (
-        <>
-          <span className="td-principal">{a.o_que}</span>
-          {a.observacao ? (
-            <span className="td-sub" style={{ display: "block" }}>
-              {a.observacao}
-            </span>
-          ) : null}
-        </>
-      ),
-    },
-    { chave: "por_que", rotulo: "Por que fazer?", render: (a) => a.por_que || "—" },
-    { chave: "onde", rotulo: "Onde fazer?", render: (a) => a.onde || "—" },
-    { chave: "quem", rotulo: "Quem vai fazer?", render: (a) => a.quem || "—" },
-    { chave: "quanto", rotulo: "Quanto vai custar?", render: (a) => reais(a.quanto) },
-    { chave: "prazo", rotulo: "Prazo", render: (a) => formatarData(a.prazo) },
-    { chave: "situacao", rotulo: "Situação", render: (a) => <SeloAcao acao={a} /> },
-    ...(aberto
-      ? [
-          {
-            chave: "acoes",
-            rotulo: "Ações",
-            classe: "td-acoes",
-            render: (a: Acao) => (
-              <>
-                <BotaoAcao icone="editar" titulo="Editar ação" onClick={() => setEditando(a)} />
-                <BotaoAcao icone="inativar" titulo="Remover ação" perigo onClick={() => setRemovendo(a)} />
-              </>
-            ),
-          },
-        ]
-      : []),
-  ];
+  // Acoes paginadas de 10 em 10, como as demais tabelas.
+  const paginaAcoes = usePaginacaoLocal(dados?.acoes || []);
 
   const acoesModal = [
     ...(ehPmo && plano
@@ -607,19 +560,41 @@ function ModalPlano({
 
         {plano ? (
           <>
-            <GradeDetalhes
-              itens={[
-                { rotulo: "Assunto", valor: plano.assunto, largo: true },
-                { rotulo: "Objetivo", valor: plano.objetivo, largo: true },
-                { rotulo: "Responsável", valor: plano.lider_nome || plano.responsavel_nome },
-                { rotulo: "Cliente", valor: plano.cliente_nome },
-                { rotulo: "Ciclo", valor: plano.ciclo_codigo },
-                { rotulo: "Início", valor: formatarData(plano.inicio) },
-                { rotulo: "Encerrado", valor: plano.encerrado_em ? formatarData(plano.encerrado_em) : null },
-                { rotulo: "Nº do plano", valor: plano.numero },
-                { rotulo: "Situação", valor: <SeloPlano situacao={plano.situacao} /> },
-              ]}
-            />
+            {/* Formato da planilha modelo do PMO (images/): faixa de titulo,
+                quadro do cabecalho e tabela 5W2H com a situacao colorida. */}
+            <div className="plano-folha">
+              <div className="plano-folha-topo">
+                <div className="plano-folha-logo">
+                  <span role="img" aria-label="Seteg" />
+                </div>
+                <div className="plano-folha-titulo">PLANO DE AÇÃO</div>
+              </div>
+              <div className="plano-folha-cab">
+                <div className="rot">Assunto:</div>
+                <div className="val">{plano.assunto}</div>
+                <div className="rot">Responsável:</div>
+                <div className="rot centro">Início:</div>
+                <div className="rot centro">Encerrado:</div>
+                <div className="rot centro">Nº Plano:</div>
+
+                <div className="rot">Objetivo:</div>
+                <div className="val">{plano.objetivo}</div>
+                <div className="val">{plano.lider_nome || plano.responsavel_nome || "—"}</div>
+                <div className="val centro">{formatarData(plano.inicio)}</div>
+                <div className="val centro">{plano.encerrado_em ? formatarData(plano.encerrado_em) : "—"}</div>
+                <div className="val centro">{plano.numero}</div>
+
+                <div className="rot ultima">Projeto:</div>
+                <div className="val ultima">
+                  {plano.codigo_clockify} — {plano.projeto_nome}
+                </div>
+                <div className="val ultima">Cliente: {plano.cliente_nome || "—"}</div>
+                <div className="val centro ultima">Ciclo {plano.ciclo_codigo}</div>
+                <div className="val centro ultima" style={{ gridColumn: "span 2" }}>
+                  <SeloPlano situacao={plano.situacao} />
+                </div>
+              </div>
+            </div>
 
             <div
               style={{
@@ -641,14 +616,73 @@ function ModalPlano({
               <Aviso tipo="info">Plano encerrado: as ações ficam só para consulta.</Aviso>
             ) : null}
 
-            <div className="tabela-scroll">
-              <Tabela
-                colunas={colunas}
-                linhas={dados?.acoes || []}
-                chaveDaLinha={(a) => a.id}
-                vazio="Nenhuma ação lançada ainda."
-              />
-            </div>
+            {dados?.acoes.length ? (
+              <>
+                <div className="tabela-scroll">
+                  <table className="plano-tabela">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th>O que fazer?<small>"What"</small></th>
+                        <th>Por que fazer?<small>"Why"</small></th>
+                        <th>Onde fazer?<small>"Where"</small></th>
+                        <th>Quem vai fazer?<small>"Who"</small></th>
+                        <th>Quanto vai custar?<small>"How Much"</small></th>
+                        <th>Prazo<small>"When"</small></th>
+                        <th>Situação<small>"Status"</small></th>
+                        {aberto ? <th>Ações</th> : null}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginaAcoes.visiveis.map((a) => {
+                        const s = SITUACAO_ACAO[a.situacao_efetiva] || SITUACAO_ACAO.no_prazo;
+                        const automatico = a.situacao_efetiva === "atrasado" && a.situacao !== "atrasado";
+                        return (
+                          <tr key={a.id}>
+                            <td className="item">{a.ordem}</td>
+                            <td>
+                              <span className="td-principal">{a.o_que}</span>
+                              {a.observacao ? (
+                                <span className="td-sub" style={{ display: "block" }}>
+                                  {a.observacao}
+                                </span>
+                              ) : null}
+                            </td>
+                            <td>{a.por_que || "—"}</td>
+                            <td>{a.onde || "—"}</td>
+                            <td>{a.quem || "—"}</td>
+                            <td className="num">{reais(a.quanto)}</td>
+                            <td className="data">{formatarData(a.prazo)}</td>
+                            <td
+                              className={`status ${a.situacao_efetiva}`}
+                              title={automatico ? "Prazo vencido e ação não concluída" : undefined}
+                            >
+                              {s.rotulo}
+                            </td>
+                            {aberto ? (
+                              <td className="acoes">
+                                <BotaoAcao icone="editar" titulo="Editar ação" onClick={() => setEditando(a)} />
+                                <BotaoAcao
+                                  icone="inativar"
+                                  titulo="Remover ação"
+                                  perigo
+                                  onClick={() => setRemovendo(a)}
+                                />
+                              </td>
+                            ) : null}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {paginaAcoes.barra}
+              </>
+            ) : (
+              <p style={{ fontSize: ".85rem", color: "var(--text-muted)", padding: "10px 0" }}>
+                Nenhuma ação lançada ainda.
+              </p>
+            )}
           </>
         ) : null}
       </Modal>

@@ -1756,3 +1756,57 @@ table.tabela-modulo th.td-acoes { text-align: left; }
 .escolha-opcao strong { display: block; font-weight: 700; }
 .escolha-opcao small { display: block; color: var(--text-muted); font-size: .76rem; margin-top: 2px; }
 .escolha-opcao .escolha-seta { color: var(--text-muted); flex: none; }
+
+/* ─── Plano de ação no formato da planilha modelo do PMO ─────────────────
+   Faixa de titulo (logo | PLANO DE AÇÃO), quadro do cabecalho e tabela de
+   acoes com a situacao em celula colorida (verde/amarelo/vermelho), como no
+   modelo em images/. Cores pelas variaveis do tema: funciona claro e escuro. */
+.modal-modulo-box.largo:has(.plano-folha) { max-width: 1200px; }
+.plano-folha { border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
+.plano-folha-topo { display: grid; grid-template-columns: 200px 1fr; border-bottom: 1px solid var(--line); }
+.plano-folha-logo {
+  display: flex; align-items: center; justify-content: center; padding: 14px;
+  border-right: 1px solid var(--line);
+}
+.plano-folha-logo span {
+  display: block; width: 110px; aspect-ratio: 3725 / 1513;
+  background-color: var(--text-primary);
+  -webkit-mask: url('/imagens/logo.png') center / contain no-repeat;
+  mask: url('/imagens/logo.png') center / contain no-repeat;
+}
+.plano-folha-titulo {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.35rem; font-weight: 800; letter-spacing: .04em; color: var(--text-primary);
+}
+.plano-folha-cab {
+  display: grid; grid-template-columns: 110px 1fr 1.1fr 0.8fr 0.8fr 0.8fr;
+  border-bottom: 1px solid var(--line);
+}
+.plano-folha-cab > div { padding: 8px 10px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: .82rem; }
+.plano-folha-cab > div:nth-child(6n) { border-right: none; }
+.plano-folha-cab .rot { font-weight: 700; color: var(--text-primary); }
+.plano-folha-cab .val { color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; }
+.plano-folha-cab .centro { text-align: center; }
+.plano-folha-cab .ultima { border-bottom: none; }
+.plano-tabela { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.plano-tabela th {
+  background: var(--surface-sunken); color: var(--text-primary); font-weight: 700;
+  text-align: center; padding: 8px 8px; border: 1px solid var(--line); line-height: 1.25;
+  text-transform: none; letter-spacing: 0; font-size: .78rem; position: static;
+}
+.plano-tabela th small { display: block; font-weight: 600; color: var(--text-muted); }
+.plano-tabela td { padding: 8px 8px; border: 1px solid var(--line-soft); color: var(--text-secondary); vertical-align: middle; }
+.plano-tabela td.item, .plano-tabela td.num, .plano-tabela td.data { text-align: center; white-space: nowrap; }
+.plano-tabela td.status { text-align: center; font-weight: 600; white-space: nowrap; }
+.plano-tabela td.status.concluido { background: rgba(34, 160, 80, 0.16); color: var(--green-text, #15803d); }
+.plano-tabela td.status.no_prazo  { background: rgba(234, 179, 8, 0.20);  color: var(--yellow-text, #a16207); }
+.plano-tabela td.status.atrasado  { background: rgba(239, 68, 68, 0.16);  color: var(--red-text, #b91c1c); }
+.plano-tabela td.acoes { text-align: left; white-space: nowrap; }
+.plano-tabela tbody tr:nth-child(even) td { background: transparent; }
+.plano-tabela tbody tr:hover td:not(.status) { background: var(--glass-bg-hover); }
+@media (max-width: 760px) {
+  .plano-folha-topo { grid-template-columns: 1fr; }
+  .plano-folha-logo { border-right: none; border-bottom: 1px solid var(--line); }
+  .plano-folha-cab { grid-template-columns: 1fr 1fr; }
+  .plano-folha-cab > div { border-right: none; }
+}
