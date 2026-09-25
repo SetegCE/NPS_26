@@ -35,13 +35,14 @@ const API_QUE_O_LIDER_USA = [
   "/api/isc/pendentes",
   "/api/isc/comparativo",
   "/api/historico/lider", //      tela Resultados
+  "/api/respostas", //            Respostas dos ciclos
   "/api/planos-acao", //          Planos de Ação
   "/api/planos-acao/abc",
   "/api/planos-acao/abc/acoes", // líder preenche as ações
 ];
 
 /** Telas que o menu do líder oferece. */
-const TELAS_DO_LIDER = ["/dashboard", "/meus-projetos", "/pesquisas", "/isc", "/planos-acao", "/resultados"];
+const TELAS_DO_LIDER = ["/dashboard", "/meus-projetos", "/pesquisas", "/respostas", "/isc", "/planos-acao", "/resultados"];
 
 /** Telas que só o PMO tem no menu. */
 const TELAS_SO_PMO = [

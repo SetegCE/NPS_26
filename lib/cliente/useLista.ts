@@ -34,6 +34,8 @@ export interface Lista<T> {
   irParaPagina: (p: { pagina: number; porPagina: number }) => void;
   /** Recarrega mantendo filtros e pagina — use depois de salvar. */
   recarregar: () => void;
+  /** Campos que a rota devolve alem da lista (ex.: resumo do recorte). */
+  extra: Record<string, unknown>;
 }
 
 const DEBOUNCE_MS = 320;
@@ -60,6 +62,7 @@ export function useLista<T>(
   const [buscaAplicada, setBuscaAplicada] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [extra, setExtra] = useState<Record<string, unknown>>({});
   const [gatilho, setGatilho] = useState(0);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -103,6 +106,8 @@ export function useLista<T>(
       .then((r) => {
         setItens(r.itens || []);
         setTotal(r.total ?? 0);
+        const { itens: _i, total: _t, pagina: _p, porPagina: _pp, ...resto } = r as Pagina<T> & Record<string, unknown>;
+        setExtra(resto);
         setCarregando(false);
       })
       .catch((e) => {
@@ -143,7 +148,8 @@ export function useLista<T>(
       ordenarPor,
       irParaPagina,
       recarregar,
+      extra,
     }),
-    [itens, total, pagina, porPagina, ordem, carregando, erro, busca, ordenarPor, irParaPagina, recarregar]
+    [itens, total, pagina, porPagina, ordem, carregando, erro, busca, ordenarPor, irParaPagina, recarregar, extra]
   );
 }

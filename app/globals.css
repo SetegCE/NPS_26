@@ -1805,3 +1805,18 @@ table.tabela-modulo th.td-acoes { text-align: left; }
 .plano-tabela tbody tr.alterada td:not(.status) { background: rgba(44, 86, 151, 0.07); }
 .plano-tabela tbody tr.nova td:not(.status) { background: var(--surface-2); }
 .plano-tabela tbody tr.nova td.item { color: var(--text-muted); }
+
+/* ─── Aba Respostas: resumo do recorte e notas centralizadas ──────────── */
+.td-centro { text-align: center; }
+table.tabela-modulo th.td-centro { text-align: center; }
+.resumo-respostas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 0 0 14px; }
+.resumo-respostas > div {
+  border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--glass-bg);
+  padding: 10px 14px; display: flex; flex-direction: column; gap: 2px;
+}
+.resumo-respostas span { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); font-weight: 700; }
+.resumo-respostas strong { font-size: 1.35rem; color: var(--text-primary); }
+.resumo-respostas .promotor strong { color: var(--green-text); }
+.resumo-respostas .neutro strong { color: var(--yellow-text); }
+.resumo-respostas .detrator strong { color: var(--red-text); }
+@media (max-width: 760px) { .resumo-respostas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
