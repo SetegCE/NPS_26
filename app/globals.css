@@ -1820,3 +1820,31 @@ table.tabela-modulo th.td-centro { text-align: center; }
 .resumo-respostas .neutro strong { color: var(--yellow-text); }
 .resumo-respostas .detrator strong { color: var(--red-text); }
 @media (max-width: 760px) { .resumo-respostas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ─── Barra lateral sem rolagem ─────────────────────────────────────────
+   Com 13 itens e 3 secoes, o menu passava da altura de um notebook e ganhava
+   barra de rolagem. Os espacamentos agora acompanham a ALTURA da tela (vh):
+   em monitor grande fica como antes; em tela baixa os itens se aproximam e
+   tudo cabe, sem rolar. */
+.sidebar-nav {
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: clamp(6px, 1.2vh, 12px) 10px;
+  gap: clamp(0px, 0.25vh, 2px);
+}
+.sidebar-nav::-webkit-scrollbar { display: none; }
+.sidebar-link { padding: clamp(3px, 0.9vh, 9px) 10px; }
+.sidebar-secao { padding: clamp(3px, 1.2vh, 14px) 10px clamp(1px, 0.5vh, 6px); }
+@media (max-height: 760px) {
+  .sidebar-header { min-height: 0; padding: 10px 16px; }
+  .sidebar-logo { height: 28px; }
+  .sidebar-link { font-size: 0.82rem; }
+  .sidebar-rodape { padding: 8px 12px; }
+}
+@media (max-height: 620px) {
+  .sidebar-link svg { width: 15px; height: 15px; }
+  .sidebar-link { font-size: 0.78rem; line-height: 1.2; }
+  .sidebar-secao { font-size: 0.58rem; }
+  .sidebar-logo { height: 24px; }
+  .sidebar-header { padding: 7px 16px; }
+}
