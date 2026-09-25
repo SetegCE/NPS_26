@@ -1836,8 +1836,6 @@ table.tabela-modulo th.td-centro { text-align: center; }
 .sidebar-link { padding: clamp(3px, 0.9vh, 9px) 10px; }
 .sidebar-secao { padding: clamp(3px, 1.2vh, 14px) 10px clamp(1px, 0.5vh, 6px); }
 @media (max-height: 760px) {
-  .sidebar-header { min-height: 0; padding: 10px 16px; }
-  .sidebar-logo { height: 28px; }
   .sidebar-link { font-size: 0.82rem; }
   .sidebar-rodape { padding: 8px 12px; }
 }
@@ -1845,6 +1843,11 @@ table.tabela-modulo th.td-centro { text-align: center; }
   .sidebar-link svg { width: 15px; height: 15px; }
   .sidebar-link { font-size: 0.78rem; line-height: 1.2; }
   .sidebar-secao { font-size: 0.58rem; }
-  .sidebar-logo { height: 24px; }
-  .sidebar-header { padding: 7px 16px; }
 }
+/* Logo: o topo da barra fica SEMPRE na altura do cabecalho ao lado (antes
+   encolhia em tela baixa e o logo parecia achatado). O "g" desce abaixo da
+   linha das letras, entao o centro da imagem fica acima do centro das
+   letras: o deslocamento de 3px e so compensacao optica, para "seteg"
+   parecer centralizado. */
+.sidebar-header { min-height: var(--header-height); height: var(--header-height); padding: 0 16px; flex-shrink: 0; }
+.sidebar-logo { height: 38px; width: auto; max-width: 150px; object-fit: contain; transform: translateY(5px); }
