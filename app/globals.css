@@ -1793,13 +1793,23 @@ table.tabela-modulo th.td-acoes { text-align: left; }
 .plano-tabela td { padding: 2px 3px; border: 1px solid var(--line-soft); color: var(--text-secondary); vertical-align: middle; }
 .plano-tabela td.item { text-align: center; font-weight: 700; width: 44px; }
 .plano-tabela td.num input { text-align: right; }
-.plano-tabela td.status select { font-weight: 600; cursor: pointer; }
-.plano-tabela td.status.concluido { background: rgba(34, 160, 80, 0.16); }
-.plano-tabela td.status.concluido select { color: var(--green-text); }
-.plano-tabela td.status.no_prazo { background: rgba(234, 179, 8, 0.20); }
-.plano-tabela td.status.no_prazo select { color: var(--yellow-text); }
-.plano-tabela td.status.atrasado { background: rgba(239, 68, 68, 0.16); }
-.plano-tabela td.status.atrasado select { color: var(--red-text); }
+.plano-tabela td.status { text-align: center; font-weight: 700; white-space: nowrap; padding: 4px 8px; }
+.plano-tabela td.status .quando { display: block; font-weight: 500; font-size: .72rem; opacity: .85; }
+.plano-tabela td.status.concluido { background: rgba(34, 160, 80, 0.16); color: var(--green-text); }
+.plano-tabela td.status.no_prazo { background: rgba(234, 179, 8, 0.20); color: var(--yellow-text); }
+.plano-tabela td.status.atrasado { background: rgba(239, 68, 68, 0.16); color: var(--red-text); }
+/* Feito: check grande e centralizado. */
+.plano-tabela td.feito { text-align: center; }
+.plano-tabela td.feito input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--green-text); }
+.plano-tabela td.feito input[type="checkbox"]:disabled { cursor: default; }
+/* Evidencia: campo + atalho para abrir o link; vermelho quando Feito sem link. */
+.plano-tabela .evidencia-campo { display: flex; align-items: center; gap: 4px; }
+.plano-tabela .evidencia-campo a {
+  flex-shrink: 0; text-decoration: none; font-weight: 700; color: var(--blue-text, #2c5697);
+  padding: 2px 6px; border-radius: 5px; border: 1px solid var(--line);
+}
+.plano-tabela .evidencia-campo a:hover { background: var(--glass-bg-hover); }
+.plano-tabela td.evidencia.falta input { border-color: var(--red-text); background: rgba(239, 68, 68, 0.06); }
 .plano-tabela td.acoes { text-align: left; white-space: nowrap; padding: 2px 6px; }
 .plano-tabela tbody tr:nth-child(even) td { background: transparent; }
 .plano-tabela tbody tr.alterada td:not(.status) { background: rgba(44, 86, 151, 0.07); }

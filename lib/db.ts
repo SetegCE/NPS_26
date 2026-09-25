@@ -169,6 +169,8 @@ const MENSAGENS: Record<string, string> = {
   SITUACAO_INVALIDA: "Situacao invalida.",
   VALOR_INVALIDO: "Valor invalido.",
   ACAO_NAO_ENCONTRADA: "Acao nao encontrada.",
+  EVIDENCIA_OBRIGATORIA: "Para marcar a acao como feita, informe o link da evidencia.",
+  EVIDENCIA_INVALIDA: "A evidencia deve ser um link que comece com http:// ou https://.",
 };
 
 function traduzirMensagem(codigo: string): string {

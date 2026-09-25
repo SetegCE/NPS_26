@@ -12,6 +12,15 @@ export const runtime = "nodejs";
 
 const SITUACOES = ["no_prazo", "concluido", "atrasado"] as const;
 
+/** Link da evidencia: so http(s) — nada de "javascript:" virando link clicavel. */
+function evidencia(valor: unknown): string | null {
+  const v = texto(valor, "evidencia_url", { max: 1000 });
+  if (v && !/^https?:\/\/\S+$/i.test(v)) {
+    throw erro(400, "EVIDENCIA_INVALIDA", "A evidencia deve ser um link que comece com http:// ou https://.");
+  }
+  return v;
+}
+
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   return rotaApi(async () => {
     const sessao = await exigirSessao();
@@ -48,6 +57,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       p_prazo: dataOpcional(corpo.prazo, "prazo"),
       p_situacao: umDe(corpo.situacao, SITUACOES, "situacao") || "no_prazo",
       p_observacao: texto(corpo.observacao, "observacao", { max: 2000 }),
+      p_evidencia_url: evidencia(corpo.evidencia_url),
       ...ator,
     });
     return json(r, corpo.item_id ? 200 : 201);

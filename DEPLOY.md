@@ -91,7 +91,7 @@ npm run check
 ```
 
 Carrega a estrutura (`banco/estrutura.sql`), as migrations 13 (freio de força
-bruta do login) e 20 (plano de ação) e os dados, convertendo tudo para o schema do `DATABASE_SCHEMA`,
+bruta do login), 20 (plano de ação) e 21 (evidência da ação concluída) e os dados, convertendo tudo para o schema do `DATABASE_SCHEMA`,
 e confere a contagem de cada tabela. Recusa rodar se o schema já tiver tabelas
 do NPS.
 

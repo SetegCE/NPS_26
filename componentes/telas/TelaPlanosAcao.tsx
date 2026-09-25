@@ -68,6 +68,8 @@ interface Acao extends Record<string, unknown> {
   situacao: string;
   situacao_efetiva: string;
   observacao: string | null;
+  evidencia_url: string | null;
+  concluido_em: string | null;
   atualizado_por: string;
 }
 
@@ -100,11 +102,6 @@ const SITUACAO_ACAO: Record<string, { rotulo: string; tom: Parameters<typeof Sel
   atrasado: { rotulo: "Atrasado", tom: "vermelho" },
 };
 
-const OPCOES_SITUACAO_ACAO = [
-  { valor: "no_prazo", rotulo: "No prazo" },
-  { valor: "concluido", rotulo: "Concluído" },
-  { valor: "atrasado", rotulo: "Atrasado" },
-];
 
 const reais = (v: number | null) =>
   v === null || v === undefined
@@ -497,6 +494,7 @@ interface Rascunho {
   prazo: string;
   situacao: string;
   observacao: string;
+  evidencia_url: string;
 }
 
 const RASCUNHO_VAZIO: Rascunho = {
@@ -508,6 +506,7 @@ const RASCUNHO_VAZIO: Rascunho = {
   prazo: "",
   situacao: "no_prazo",
   observacao: "",
+  evidencia_url: "",
 };
 
 const doBanco = (a: Acao): Rascunho => ({
@@ -519,7 +518,11 @@ const doBanco = (a: Acao): Rascunho => ({
   prazo: a.prazo || "",
   situacao: a.situacao || "no_prazo",
   observacao: a.observacao || "",
+  evidencia_url: a.evidencia_url || "",
 });
+
+/** Link de evidencia aceito: so http(s), como o banco exige. */
+const linkValido = (v: string) => /^https?:\/\/\S+$/i.test(v.trim());
 
 /** Situacao que a linha MOSTRA: prazo vencido e nao concluida = atrasada. */
 function situacaoEfetiva(r: Rascunho): string {
@@ -587,6 +590,15 @@ function ModalPlano({
   async function salvarLinha(itemId: string | null, r: Rascunho) {
     if (!r.o_que.trim()) {
       toast('Preencha "O que fazer?" antes de salvar.', "erro");
+      return;
+    }
+    // Feito exige evidencia: o link da pasta do cliente (ou outro registro).
+    if (r.situacao === "concluido" && !linkValido(r.evidencia_url)) {
+      toast("Para marcar como feita, cole o link da evidência (começando com http:// ou https://).", "erro");
+      return;
+    }
+    if (r.evidencia_url.trim() && !linkValido(r.evidencia_url)) {
+      toast("O link da evidência deve começar com http:// ou https://.", "erro");
       return;
     }
     setSalvandoId(itemId || "nova");
@@ -679,7 +691,8 @@ function ModalPlano({
   function celulas(
     r: Rascunho,
     mudarCampo: (campo: keyof Rascunho, valor: string) => void,
-    aoEnter: () => void
+    aoEnter: () => void,
+    concluidoEm: string | null = null
   ) {
     const campo = (
       nome: keyof Rascunho,
@@ -699,6 +712,7 @@ function ModalPlano({
     );
     const efetiva = situacaoEfetiva(r);
     const vencida = efetiva === "atrasado" && r.situacao !== "atrasado";
+    const faltaEvidencia = r.situacao === "concluido" && !linkValido(r.evidencia_url);
     return (
       <>
         <td>{campo("o_que", "O que fazer?", { maxLength: 1000, placeholder: "O que fazer?" })}</td>
@@ -709,19 +723,41 @@ function ModalPlano({
           {campo("quanto", "Quanto vai custar?", { maxLength: 20, inputMode: "decimal", placeholder: "0,00" })}
         </td>
         <td className="data">{campo("prazo", "Prazo", { type: "date" })}</td>
-        <td className={`status ${efetiva}`} title={vencida ? "Prazo vencido e ação não concluída" : undefined}>
-          <select
-            aria-label="Situação"
-            value={r.situacao}
+        <td className="feito">
+          <input
+            type="checkbox"
+            aria-label="Ação feita"
+            title={r.situacao === "concluido" ? "Feita" : "Marcar como feita (exige o link da evidência)"}
+            checked={r.situacao === "concluido"}
             disabled={!aberto}
-            onChange={(e) => mudarCampo("situacao", e.target.value)}
-          >
-            {OPCOES_SITUACAO_ACAO.map((o) => (
-              <option key={o.valor} value={o.valor}>
-                {o.valor === r.situacao && vencida ? "Vencida" : o.rotulo}
-              </option>
-            ))}
-          </select>
+            onChange={(e) => mudarCampo("situacao", e.target.checked ? "concluido" : "no_prazo")}
+          />
+        </td>
+        <td className={`status ${efetiva}`} title={vencida ? "Prazo vencido e ação não concluída" : undefined}>
+          {SITUACAO_ACAO[efetiva]?.rotulo || efetiva}
+          {concluidoEm && r.situacao === "concluido" ? (
+            <span className="quando">em {formatarData(concluidoEm)}</span>
+          ) : null}
+        </td>
+        <td className={`evidencia${faltaEvidencia ? " falta" : ""}`}>
+          <div className="evidencia-campo">
+            {campo("evidencia_url", "Link da evidência", {
+              maxLength: 1000,
+              type: "url",
+              placeholder: r.situacao === "concluido" ? "Cole o link da evidência" : "https://...",
+            })}
+            {linkValido(r.evidencia_url) ? (
+              <a
+                href={r.evidencia_url.trim()}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Abrir evidência"
+                aria-label="Abrir evidência"
+              >
+                ↗
+              </a>
+            ) : null}
+          </div>
         </td>
         <td>{campo("observacao", "Observação", { maxLength: 2000 })}</td>
       </>
@@ -821,7 +857,7 @@ function ModalPlano({
               <strong style={{ fontSize: ".92rem" }}>Ações ({dados?.acoes.length || 0})</strong>
               {aberto ? (
                 <span className="td-sub">
-                  Edite direto nas células e salve a linha no ✓ (ou Enter). A última linha adiciona uma nova ação.
+                  Edite direto nas células e salve a linha no ✓ (ou Enter). Ao marcar Feito, cole o link da evidência.
                 </span>
               ) : null}
             </div>
@@ -839,7 +875,9 @@ function ModalPlano({
                     <th style={{ minWidth: 120 }}>Quem vai fazer?</th>
                     <th style={{ minWidth: 100 }}>Quanto (R$)</th>
                     <th style={{ minWidth: 135 }}>Prazo</th>
-                    <th style={{ minWidth: 135 }}>Situação</th>
+                    <th style={{ width: 56 }}>Feito</th>
+                    <th style={{ minWidth: 110 }}>Situação</th>
+                    <th style={{ minWidth: 190 }}>Evidência (link)</th>
                     <th style={{ minWidth: 150 }}>Observação</th>
                     {aberto ? <th style={{ width: 84 }} /> : null}
                   </tr>
@@ -856,7 +894,8 @@ function ModalPlano({
                           (c, v) => mudar(a, c, v),
                           () => {
                             if (alterada) salvarLinha(a.id, r);
-                          }
+                          },
+                          a.concluido_em
                         )}
                         {aberto ? (
                           <td className="acoes">
