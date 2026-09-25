@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Dashboard NPS | Seteg",
   description: "Net Promoter Score — acompanhamento por ciclo, projeto e lider.",
-  icons: { icon: "/imagens/logo.png" },
+  icons: { icon: "/favicon.png" },
 };
 
 export const viewport: Viewport = {
