@@ -39,6 +39,8 @@ pnpm-debug.log*
 # Nunca subir dump de banco nem copia de seguranca.
 bd/
 backup/
+# Saida do conversor de schema (gerada a partir dos .sql versionados).
+*.nps.sql
 export-dados.json
 
 # ===== Ferramentas e editores =====

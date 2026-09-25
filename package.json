@@ -11,7 +11,9 @@
     "check": "node scripts/verificar-config.mjs",
     "test": "node --import ./tests/alias.mjs --test \"tests/*.test.mjs\"",
     "sincronizar:agendado": "node scripts/sincronizar-projetos-agendado.mjs",
-    "comparar:motores": "node --import ./tests/alias.mjs scripts/comparar-motores.mjs"
+    "comparar:motores": "node --import ./tests/alias.mjs scripts/comparar-motores.mjs",
+    "banco:exportar": "node scripts/exportar-dados.mjs",
+    "banco:restaurar": "node scripts/restaurar-banco.mjs"
   },
   "dependencies": {
     "jose": "^6.2.8",

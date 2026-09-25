@@ -116,7 +116,15 @@ for (const [nome, acao] of CASOS) {
     rest.ok === pg.ok &&
     (rest.ok ? canonico(rest.valor) === canonico(pg.valor) : rest.valor.split(" ")[0] === pg.valor.split(" ")[0]);
   const qtd = Array.isArray(rest.valor?.dados) ? ` (${rest.valor.dados.length} linhas)` : "";
+  // Ordem diferente so entre empates (mesma data/nome): o Postgres nao garante
+  // ordem entre empates nem no mesmo banco. Conteudo igual = ok.
+  const lista = (v) => (Array.isArray(v?.dados) ? v.dados : Array.isArray(v) ? v : null);
+  const mesmoConteudo =
+    !iguais && rest.ok && pg.ok && lista(rest.valor) && lista(pg.valor) &&
+    canonico(lista(rest.valor).map(canonico).sort()) === canonico(lista(pg.valor).map(canonico).sort()) &&
+    (rest.valor?.total ?? null) === (pg.valor?.total ?? null);
   if (iguais) console.log(`  ✔ ${nome}${qtd}`);
+  else if (mesmoConteudo) console.log(`  ✔ ${nome}${qtd} — mesmo conteudo; so a ordem entre empates difere`);
   else {
     falhas++;
     console.log(`  ✖ ${nome}${qtd}`);

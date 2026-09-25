@@ -20,7 +20,7 @@
 // Nada aqui monta SQL com texto vindo do usuario: identificadores passam por
 // `id()` (so [a-z0-9_]) e valores sempre vao como parametro ($1, $2...).
 
-import { Pool, types } from "pg";
+import { Pool, type PoolClient, types } from "pg";
 import { erro } from "@/lib/validacao";
 
 /** Falha do banco, traduzida para status/mensagem por lib/db.ts. */
@@ -61,25 +61,40 @@ export function esquema(): string {
 
 function pool(): Pool {
   if (!global_.__npsPool) {
-    const s = esquema();
-    global_.__npsPool = new Pool({
+    const novo = new Pool({
       connectionString: process.env.DATABASE_URL,
       max: Number(process.env.DATABASE_POOL_MAX || 10),
       ssl: process.env.DATABASE_SSL === "true" ? { rejectUnauthorized: false } : undefined,
-      // As funcoes nps_* e os defaults das tabelas chamam nps_norm() e o
-      // pgcrypto sem prefixo: o search_path precisa achar os dois.
-      options: s === "public" ? undefined : `-c search_path=${s},extensions,public`,
     });
+    global_.__npsPool = novo;
   }
   return global_.__npsPool;
 }
 
+// Conexoes ja preparadas (ver consultar).
+const preparadas = new WeakSet<PoolClient>();
+
 async function consultar<R = Record<string, unknown>>(sql: string, valores: unknown[] = []) {
+  let cliente: PoolClient | null = null;
   try {
-    const r = await pool().query(sql, valores);
+    cliente = await pool().connect();
+    // Ajuste de sessao na primeira vez que cada conexao e usada, por SET (e
+    // nao pelo parametro `options`, que poolers como o do Supabase recusam):
+    //  - search_path: as funcoes nps_* e as colunas calculadas chamam
+    //    nps_norm() e o pgcrypto sem prefixo;
+    //  - fuso UTC, como no Supabase: o canal da resposta sai de now()::date, e
+    //    no fuso do servidor (-03) uma resposta perto da meia-noite cairia no
+    //    dia errado. Tambem mantem as datas no formato "+00:00".
+    if (!preparadas.has(cliente)) {
+      await cliente.query(`set search_path = ${esquema()}, extensions, public; set time zone 'UTC'`);
+      preparadas.add(cliente);
+    }
+    const r = await cliente.query(sql, valores);
     return r.rows as R[];
   } catch (e) {
     throw falhaDoPg(e);
+  } finally {
+    cliente?.release();
   }
 }
 

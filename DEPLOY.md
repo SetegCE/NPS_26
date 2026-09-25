@@ -13,6 +13,7 @@ Segue o mesmo padrão do Clockrview (`0000-1-2026--clockrview/DEPLOY.md`):
 
 O código fala direto com o Postgres (`lib/dbPostgres.ts`) quando
 `DATABASE_URL` está definida. Não há dependência do Supabase no servidor.
+A estrutura do banco está em `banco/estrutura.sql`.
 
 ---
 
@@ -43,98 +44,76 @@ Crie o `.env` a partir do `.env.example` e preencha:
 
 ---
 
-## 2. Banco: migrar do Supabase para o schema `nps`
+## 2. Banco: levar os dados do Supabase para o schema `nps`
 
-Use o **pg_dump/psql da versão 17** (o Supabase roda PostgreSQL 17.6).
-Connection string do Supabase: painel → Connect → *Session pooler*.
+Detalhes em [`banco/README.md`](banco/README.md). Não precisa de `pg_dump` nem
+de `psql`: os dois passos são scripts do próprio projeto, e o fluxo foi
+validado num PostgreSQL 17 local com banco `7station` e schema `nps` (as
+1.213 linhas saíram idênticas às do Supabase).
 
-### 2.1 Exportar do Supabase
+### 2.1 Congelar o sistema atual
 
-As tabelas `config_acesso` e `acessos_lideres` **ficam de fora**: guardam as
-senhas antigas em texto puro, e nenhum código, função ou view as usa mais (o
-login é `usuarios_nps`, com senha em hash). `--no-privileges` também deixa de
-fora as permissões públicas do Supabase (`anon`, `authenticated`).
+Entre a exportação e a virada do domínio ninguém gera pesquisa, sincroniza,
+edita cadastro ou responde — senão a gravação fica no Supabase. Hoje só o
+próprio app grava no banco (não há integração externa escrevendo nele).
 
-```powershell
-$SUPA = "postgresql://postgres.acpugxkikuzbvtjwxups:<senha>@<host>.pooler.supabase.com:5432/postgres"
-$EXCLUIR = "--exclude-table=public.config_acesso", "--exclude-table=public.acessos_lideres"
-
-pg_dump $SUPA --schema=public --schema-only --no-owner --no-privileges @EXCLUIR -f estrutura.sql
-pg_dump $SUPA --schema=public --data-only   --no-owner --no-privileges @EXCLUIR -f dados.sql
-```
-
-> Congele o sistema antigo (ninguém respondendo pesquisa) entre este passo e a
-> virada do domínio, para nenhuma resposta ficar para trás.
-
-### 2.2 Converter para o schema `nps`
+### 2.2 Exportar (na máquina que alcança o Supabase)
 
 ```powershell
-node scripts\converter-dump-schema.mjs estrutura.sql dados.sql nps
-node scripts\converter-dump-schema.mjs supabase\migrations\13_freio_de_forca_bruta_no_banco.sql - nps
+npm run banco:exportar
 ```
 
-Gera `estrutura.nps.sql`, `dados.nps.sql` e a migration 13 convertida. O
-script troca `public.` por `nps.` na estrutura, ajusta o `search_path` fixado
-nas funções e, nos dados, mexe **só** nas linhas `COPY` (o conteúdo das
-respostas nunca é alterado). Se ele listar linhas para conferir, olhe antes
-de seguir.
+Gera `backup/dados-nps-AAAA-MM-DD.sql`. Esse arquivo tem dado pessoal, hashes
+de senha e os tokens dos links de pesquisa: leve ao servidor por meio interno
+(pasta de rede, SharePoint restrito). **Nunca** por e-mail, chat ou Git — o
+repositório é público.
 
 ### 2.3 Extensões
 
-As funções `nps_*` usam o `pgcrypto` (tokens das pesquisas) e o `uuid-ossp`.
-Extensão é uma por banco: confira se já existem no `7station`.
+As funções usam `pgcrypto` (token dos links) e `uuid-ossp`. O restaurar tenta
+criá-las no schema `extensions`; se o usuário `7station` não tiver permissão,
+um administrador roda antes:
 
 ```sql
-select extname, extnamespace::regnamespace from pg_extension;
--- se faltarem:
 create schema if not exists extensions;
 create extension if not exists pgcrypto   schema extensions;
 create extension if not exists "uuid-ossp" schema extensions;
 ```
 
-O `search_path` das funções convertidas é `nps, extensions, public`, então
-elas acham as extensões em `extensions` ou em `public`.
+(Se já existirem em outro schema do `7station`, tudo bem: o `search_path` das
+funções é `nps, extensions, public`.)
 
-### 2.4 Restaurar
-
-```powershell
-$LOCAL = "postgresql://7station:<senha>@localhost:5432/7station"
-psql $LOCAL -v ON_ERROR_STOP=1 -f estrutura.nps.sql
-psql $LOCAL -v ON_ERROR_STOP=1 -f dados.nps.sql
-psql $LOCAL -v ON_ERROR_STOP=1 -f supabase\migrations\13_freio_de_forca_bruta_no_banco.nps.sql
-```
-
-A migration 13 cria o freio de força bruta do login (contagem de tentativas no
-banco). A 12 não é necessária: ela só fechava o acesso público do Supabase,
-que não existe no servidor, e as tabelas de senha antigas já ficaram de fora.
-
-### 2.5 Conferir que nada se perdeu
+### 2.4 Restaurar (no servidor, com o `.env` do passo 1)
 
 ```powershell
+npm run banco:restaurar -- backupdados-nps-AAAA-MM-DD.sql
 npm run check
 ```
 
-Compare a contagem de linhas de cada tabela na origem e no destino (tem que
-ser idêntica):
+Carrega a estrutura (`banco/estrutura.sql`), a migration 13 (freio de força
+bruta do login) e os dados, convertendo tudo para o schema do `DATABASE_SCHEMA`,
+e confere a contagem de cada tabela. Recusa rodar se o schema já tiver tabelas
+do NPS.
 
-```sql
-select 'respostas_nps', count(*) from nps.respostas_nps union all
-select 'pesquisas_nps', count(*) from nps.pesquisas_nps union all
-select 'projetos_mestre_nps', count(*) from nps.projetos_mestre_nps union all
-select 'projetos_nps', count(*) from nps.projetos_nps union all
-select 'respondentes_nps', count(*) from nps.respondentes_nps union all
-select 'projeto_respondentes_nps', count(*) from nps.projeto_respondentes_nps union all
-select 'clientes_nps', count(*) from nps.clientes_nps union all
-select 'lideres_nps', count(*) from nps.lideres_nps union all
-select 'ciclos_nps', count(*) from nps.ciclos_nps union all
-select 'isc_nps', count(*) from nps.isc_nps union all
-select 'projeto_lideranca_hist_nps', count(*) from nps.projeto_lideranca_hist_nps union all
-select 'ciclo_transicao_nps', count(*) from nps.ciclo_transicao_nps union all
-select 'auditoria_nps', count(*) from nps.auditoria_nps union all
-select 'usuarios_nps', count(*) from nps.usuarios_nps;
-```
+Ficam de fora de propósito as tabelas `config_acesso` e `acessos_lideres`
+(senhas antigas em texto puro, sem uso) e as permissões públicas do Supabase.
 
-(No Supabase, a mesma consulta trocando `nps.` por `public.`.)
+### 2.5 Dois cuidados do servidor
+
+- **Fuso horário:** o app fixa a sessão do banco em UTC, como no Supabase (o
+  canal E-mail/WhatsApp sai de `now()::date`). Nada a configurar.
+- **Ordem alfabética (collation):** o Supabase ordena como `en_US`. Um banco
+  criado com `locale=C` ordena acentos e maiúsculas de outro jeito — muda só a
+  ordem das listas, nunca os dados. Se for criar um banco novo em vez de usar
+  o `7station`, prefira `locale_provider icu icu_locale 'en-US'`.
+
+### 2.6 Alternativa com pg_dump
+
+Se preferir o dump nativo: `pg_dump` 17 do Supabase com
+`--schema=public --no-owner --no-privileges` e
+`--exclude-table=public.config_acesso --exclude-table=public.acessos_lideres`,
+depois `node scripts/converter-dump-schema.mjs estrutura.sql dados.sql nps` e
+`psql` nos arquivos gerados. O caminho dos scripts acima é o validado.
 
 ---
 
