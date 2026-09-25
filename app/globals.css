@@ -1810,3 +1810,11 @@ table.tabela-modulo th.td-acoes { text-align: left; }
   .plano-folha-cab { grid-template-columns: 1fr 1fr; }
   .plano-folha-cab > div { border-right: none; }
 }
+/* Campos editaveis dentro da folha (decisao do PMO). */
+.plano-folha-cab input,
+.plano-folha-cab textarea {
+  width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px;
+  background: var(--surface-2); color: var(--text-primary); font: inherit; font-size: .84rem; resize: vertical;
+}
+.plano-folha-cab input:focus,
+.plano-folha-cab textarea:focus { outline: 2px solid rgba(44, 86, 151, 0.35); border-color: var(--blue-text, #2c5697); }

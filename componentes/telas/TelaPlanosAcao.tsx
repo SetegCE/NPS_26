@@ -79,6 +79,8 @@ interface AlvoDecisao {
   ciclo: string;
   projeto: string;
   codigo: string;
+  cliente: string | null;
+  lider: string | null;
   atual?: Plano;
 }
 
@@ -173,6 +175,8 @@ export function TelaPlanosAcao({ sessao }: { sessao: Sessao }) {
               ciclo: l.ciclo,
               projeto: l.projeto_nome,
               codigo: l.codigo_clockify,
+              cliente: l.cliente_nome,
+              lider: l.lider_ciclo,
             })
           }
         />
@@ -239,6 +243,8 @@ export function TelaPlanosAcao({ sessao }: { sessao: Sessao }) {
                   ciclo: l.ciclo_codigo,
                   projeto: l.projeto_nome,
                   codigo: l.codigo_clockify,
+                  cliente: l.cliente_nome,
+                  lider: l.lider_nome || l.responsavel_nome,
                   atual: l,
                 })
               }
@@ -330,9 +336,11 @@ export function TelaPlanosAcao({ sessao }: { sessao: Sessao }) {
         <ModalDecisao
           alvo={decidindo}
           aoFechar={() => setDecidindo(null)}
-          aoSalvar={() => {
+          aoSalvar={(planoCriado) => {
             setDecidindo(null);
             carregar();
+            // "Sim": abre o plano ja no formato da planilha, pronto para as acoes.
+            if (planoCriado) setAbertoId(planoCriado);
           }}
         />
       ) : null}
@@ -358,7 +366,7 @@ function ModalDecisao({
 }: {
   alvo: AlvoDecisao;
   aoFechar: () => void;
-  aoSalvar: () => void;
+  aoSalvar: (planoCriado?: string) => void;
 }) {
   const toast = useToast();
   const [passivel, setPassivel] = useState<"" | "sim" | "nao">(
@@ -377,7 +385,7 @@ function ModalDecisao({
     setErro(null);
     setSalvando(true);
     try {
-      const r = await api.post<{ numero: string | null }>("planos-acao", {
+      const r = await api.post<{ id: string; numero: string | null }>("planos-acao", {
         projeto_id: alvo.projeto_id,
         ciclo_id: alvo.ciclo_id,
         passivel: passivel === "sim",
@@ -390,7 +398,7 @@ function ModalDecisao({
           : "Registrado: sem plano de ação.",
         "sucesso"
       );
-      aoSalvar();
+      aoSalvar(passivel === "sim" ? r.id : undefined);
     } catch (e) {
       setErro(e instanceof ErroApi ? e.message : "Não foi possível salvar.");
       setSalvando(false);
@@ -430,28 +438,59 @@ function ModalDecisao({
       </div>
 
       {passivel === "sim" ? (
-        <div className="form-grade">
-          <CampoTexto
-            nome="assunto"
-            rotulo="Assunto"
-            obrigatorio
-            larguraTotal
-            valor={assunto}
-            aoMudar={setAssunto}
-            maxLength={200}
-            placeholder="Ex.: Comunicação com o cliente"
-          />
-          <CampoArea
-            nome="objetivo"
-            rotulo="Objetivo / contexto geral"
-            obrigatorio
-            larguraTotal
-            linhas={5}
-            valor={objetivo}
-            aoMudar={setObjetivo}
-            maxLength={4000}
-            ajuda="O que motivou o plano e onde está a oportunidade de melhoria. O líder lê isto antes de preencher as ações."
-          />
+        // Mesmo quadro da planilha modelo: o PMO preenche Assunto e Objetivo
+        // direto na folha; o resto vem sozinho.
+        <div className="plano-folha">
+          <div className="plano-folha-topo">
+            <div className="plano-folha-logo">
+              <span role="img" aria-label="Seteg" />
+            </div>
+            <div className="plano-folha-titulo">PLANO DE AÇÃO</div>
+          </div>
+          <div className="plano-folha-cab">
+            <div className="rot">Assunto:</div>
+            <div className="val">
+              <input
+                aria-label="Assunto"
+                value={assunto}
+                onChange={(e) => setAssunto(e.target.value)}
+                maxLength={200}
+                placeholder="Ex.: Comunicação com o cliente"
+              />
+            </div>
+            <div className="rot">Responsável:</div>
+            <div className="rot centro">Início:</div>
+            <div className="rot centro">Encerrado:</div>
+            <div className="rot centro">Nº Plano:</div>
+
+            <div className="rot">Objetivo:</div>
+            <div className="val">
+              <textarea
+                aria-label="Objetivo"
+                rows={5}
+                value={objetivo}
+                onChange={(e) => setObjetivo(e.target.value)}
+                maxLength={4000}
+                placeholder="O que motivou o plano e onde está a oportunidade de melhoria. O líder lê isto antes de preencher as ações."
+              />
+            </div>
+            <div className="val">{alvo.lider || "—"}</div>
+            <div className="val centro">
+              {alvo.atual?.inicio ? formatarData(alvo.atual.inicio) : formatarData(new Date().toISOString().slice(0, 10))}
+            </div>
+            <div className="val centro">{alvo.atual?.encerrado_em ? formatarData(alvo.atual.encerrado_em) : "—"}</div>
+            <div className="val centro">
+              {alvo.atual?.numero || <span className="td-sub">gerado ao salvar</span>}
+            </div>
+
+            <div className="rot ultima">Projeto:</div>
+            <div className="val ultima">
+              {alvo.codigo} — {alvo.projeto}
+            </div>
+            <div className="val ultima">Cliente: {alvo.cliente || "—"}</div>
+            <div className="val centro ultima">Ciclo {alvo.ciclo}</div>
+            <div className="val centro ultima" style={{ gridColumn: "span 2" }} />
+          </div>
         </div>
       ) : null}
 
