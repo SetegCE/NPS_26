@@ -9,7 +9,6 @@
 // (supabase/migrations/20_plano_de_acao.sql); a tela so conduz.
 
 import { useCallback, useEffect, useState } from "react";
-import { CampoArea, CampoSelect, CampoTexto } from "@/componentes/Campo";
 import { Aviso, EstadoCarregando, EstadoErro } from "@/componentes/Estados";
 import { Confirmacao, Modal } from "@/componentes/Modal";
 import { usePaginacaoLocal } from "@/componentes/Paginacao";
@@ -357,6 +356,7 @@ export function TelaPlanosAcao({ sessao }: { sessao: Sessao }) {
   );
 }
 
+
 // ─── Decisao do PMO ────────────────────────────────────────────────────────
 
 function ModalDecisao({
@@ -394,7 +394,7 @@ function ModalDecisao({
       });
       toast(
         passivel === "sim"
-          ? `Plano de ação ${r.numero} criado. O líder já pode preencher as ações.`
+          ? `Plano de ação ${r.numero} salvo. O líder já pode preencher as ações.`
           : "Registrado: sem plano de ação.",
         "sucesso"
       );
@@ -438,60 +438,42 @@ function ModalDecisao({
       </div>
 
       {passivel === "sim" ? (
-        // Mesmo quadro da planilha modelo: o PMO preenche Assunto e Objetivo
-        // direto na folha; o resto vem sozinho.
-        <div className="plano-folha">
-          <div className="plano-folha-topo">
-            <div className="plano-folha-logo">
-              <span role="img" aria-label="Seteg" />
-            </div>
-            <div className="plano-folha-titulo">PLANO DE AÇÃO</div>
-          </div>
-          <div className="plano-folha-cab">
-            <div className="rot">Assunto:</div>
-            <div className="val">
-              <input
-                aria-label="Assunto"
-                value={assunto}
-                onChange={(e) => setAssunto(e.target.value)}
-                maxLength={200}
-                placeholder="Ex.: Comunicação com o cliente"
-              />
-            </div>
-            <div className="rot">Responsável:</div>
-            <div className="rot centro">Início:</div>
-            <div className="rot centro">Encerrado:</div>
-            <div className="rot centro">Nº Plano:</div>
-
-            <div className="rot">Objetivo:</div>
-            <div className="val">
-              <textarea
-                aria-label="Objetivo"
-                rows={5}
-                value={objetivo}
-                onChange={(e) => setObjetivo(e.target.value)}
-                maxLength={4000}
-                placeholder="O que motivou o plano e onde está a oportunidade de melhoria. O líder lê isto antes de preencher as ações."
-              />
-            </div>
-            <div className="val">{alvo.lider || "—"}</div>
-            <div className="val centro">
-              {alvo.atual?.inicio ? formatarData(alvo.atual.inicio) : formatarData(new Date().toISOString().slice(0, 10))}
-            </div>
-            <div className="val centro">{alvo.atual?.encerrado_em ? formatarData(alvo.atual.encerrado_em) : "—"}</div>
-            <div className="val centro">
-              {alvo.atual?.numero || <span className="td-sub">gerado ao salvar</span>}
-            </div>
-
-            <div className="rot ultima">Projeto:</div>
-            <div className="val ultima">
-              {alvo.codigo} — {alvo.projeto}
-            </div>
-            <div className="val ultima">Cliente: {alvo.cliente || "—"}</div>
-            <div className="val centro ultima">Ciclo {alvo.ciclo}</div>
-            <div className="val centro ultima" style={{ gridColumn: "span 2" }} />
-          </div>
-        </div>
+        <table className="plano-grade">
+          <tbody>
+            <tr>
+              <th>Assunto</th>
+              <td colSpan={3}>
+                <input
+                  aria-label="Assunto"
+                  value={assunto}
+                  onChange={(e) => setAssunto(e.target.value)}
+                  maxLength={200}
+                  placeholder="Ex.: Comunicação com o cliente"
+                  autoFocus
+                />
+              </td>
+            </tr>
+            <tr>
+              <th>Objetivo</th>
+              <td colSpan={3}>
+                <textarea
+                  aria-label="Objetivo"
+                  rows={4}
+                  value={objetivo}
+                  onChange={(e) => setObjetivo(e.target.value)}
+                  maxLength={4000}
+                  placeholder="O que motivou o plano e onde está a oportunidade de melhoria."
+                />
+              </td>
+            </tr>
+            <tr>
+              <th>Responsável</th>
+              <td>{alvo.lider || "—"}</td>
+              <th>Nº Plano</th>
+              <td>{alvo.atual?.numero || <span className="td-sub">gerado ao salvar</span>}</td>
+            </tr>
+          </tbody>
+        </table>
       ) : null}
 
       {passivel === "nao" && alvo.atual?.passivel && alvo.atual.total_acoes ? (
@@ -503,7 +485,52 @@ function ModalDecisao({
   );
 }
 
-// ─── Plano: cabecalho + acoes ──────────────────────────────────────────────
+// ─── Plano: tabela editavel ────────────────────────────────────────────────
+
+/** Campos editaveis de uma acao, como texto (o que esta nos inputs). */
+interface Rascunho {
+  o_que: string;
+  por_que: string;
+  onde: string;
+  quem: string;
+  quanto: string;
+  prazo: string;
+  situacao: string;
+  observacao: string;
+}
+
+const RASCUNHO_VAZIO: Rascunho = {
+  o_que: "",
+  por_que: "",
+  onde: "",
+  quem: "",
+  quanto: "",
+  prazo: "",
+  situacao: "no_prazo",
+  observacao: "",
+};
+
+const doBanco = (a: Acao): Rascunho => ({
+  o_que: a.o_que || "",
+  por_que: a.por_que || "",
+  onde: a.onde || "",
+  quem: a.quem || "",
+  quanto: a.quanto === null || a.quanto === undefined ? "" : String(a.quanto).replace(".", ","),
+  prazo: a.prazo || "",
+  situacao: a.situacao || "no_prazo",
+  observacao: a.observacao || "",
+});
+
+/** Situacao que a linha MOSTRA: prazo vencido e nao concluida = atrasada. */
+function situacaoEfetiva(r: Rascunho): string {
+  if (r.situacao === "concluido") return "concluido";
+  const hoje = new Date().toISOString().slice(0, 10);
+  if (r.situacao === "atrasado" || (r.prazo && r.prazo < hoje)) return "atrasado";
+  return "no_prazo";
+}
+
+const iguais = (a: Rascunho, b: Rascunho) =>
+  (Object.keys(a) as (keyof Rascunho)[]).every((k) => a[k] === b[k]);
 
 function ModalPlano({
   planoId,
@@ -519,7 +546,12 @@ function ModalPlano({
   const toast = useToast();
   const [dados, setDados] = useState<{ plano: Plano; acoes: Acao[] } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
-  const [editando, setEditando] = useState<Acao | null | undefined>(undefined);
+  // So as linhas alteradas e ainda nao salvas. Recarregar o plano nao apaga o
+  // que a pessoa esta digitando em outra linha.
+  const [edicoes, setEdicoes] = useState<Record<string, Rascunho>>({});
+  const [nova, setNova] = useState<Rascunho>(RASCUNHO_VAZIO);
+  const [cabecalho, setCabecalho] = useState<{ assunto: string; objetivo: string } | null>(null);
+  const [salvandoId, setSalvandoId] = useState<string | null>(null);
   const [removendo, setRemovendo] = useState<Acao | null>(null);
   const [ocupado, setOcupado] = useState(false);
 
@@ -532,10 +564,65 @@ function ModalPlano({
 
   useEffect(carregar, [carregar]);
 
+  const plano = dados?.plano;
+  const aberto = plano ? !plano.encerrado_em : false;
+  const paginaAcoes = usePaginacaoLocal(dados?.acoes || []);
+
   const recarregarTudo = () => {
     carregar();
     aoAlterar();
   };
+
+  const valorDe = (a: Acao) => edicoes[a.id] || doBanco(a);
+  const mudar = (a: Acao, campo: keyof Rascunho, valor: string) =>
+    setEdicoes((atual) => ({ ...atual, [a.id]: { ...valorDe(a), [campo]: valor } }));
+
+  const semEdicao = (id: string) =>
+    setEdicoes((atual) => {
+      const resto = { ...atual };
+      delete resto[id];
+      return resto;
+    });
+
+  async function salvarLinha(itemId: string | null, r: Rascunho) {
+    if (!r.o_que.trim()) {
+      toast('Preencha "O que fazer?" antes de salvar.', "erro");
+      return;
+    }
+    setSalvandoId(itemId || "nova");
+    try {
+      await api.post(`planos-acao/${planoId}/acoes`, { item_id: itemId || undefined, ...r });
+      if (itemId) semEdicao(itemId);
+      else setNova(RASCUNHO_VAZIO);
+      toast(itemId ? "Ação salva." : "Ação adicionada.", "sucesso", 1800);
+      recarregarTudo();
+    } catch (e) {
+      toast(e instanceof ErroApi ? e.message : "Não foi possível salvar a ação.", "erro");
+    } finally {
+      setSalvandoId(null);
+    }
+  }
+
+  async function salvarCabecalho() {
+    if (!plano || !cabecalho) return;
+    setOcupado(true);
+    try {
+      await api.post("planos-acao", {
+        projeto_id: plano.projeto_id,
+        ciclo_id: plano.ciclo_id,
+        passivel: true,
+        assunto: cabecalho.assunto,
+        objetivo: cabecalho.objetivo,
+      });
+      setCabecalho(null);
+      toast("Assunto e objetivo salvos.", "sucesso", 1800);
+      recarregarTudo();
+    } catch (e) {
+      toast(e instanceof ErroApi ? e.message : "Não foi possível salvar.", "erro");
+    } finally {
+      setOcupado(false);
+    }
+  }
 
   async function encerrar(encerrarPlano: boolean) {
     setOcupado(true);
@@ -556,6 +643,7 @@ function ModalPlano({
     try {
       await api.post(`planos-acao/${planoId}/acoes`, { remover: true, item_id: removendo.id });
       toast("Ação removida.", "sucesso");
+      semEdicao(removendo.id);
       setRemovendo(null);
       recarregarTudo();
     } catch (e) {
@@ -565,11 +653,13 @@ function ModalPlano({
     }
   }
 
-  const plano = dados?.plano;
-  const aberto = plano ? !plano.encerrado_em : false;
-
-  // Acoes paginadas de 10 em 10, como as demais tabelas.
-  const paginaAcoes = usePaginacaoLocal(dados?.acoes || []);
+  const alteradas = (dados?.acoes || []).filter(
+    (a) => edicoes[a.id] && !iguais(edicoes[a.id], doBanco(a))
+  ).length;
+  const fechar = () => {
+    if (alteradas && !window.confirm(`Há ${alteradas} linha(s) alterada(s) sem salvar. Fechar mesmo assim?`)) return;
+    aoFechar();
+  };
 
   const acoesModal = [
     ...(ehPmo && plano
@@ -582,16 +672,71 @@ function ModalPlano({
           },
         ]
       : []),
-    { rotulo: "Fechar", classe: "btn-primary", onClick: aoFechar },
+    { rotulo: "Fechar", classe: "btn-primary", onClick: fechar },
   ];
+
+  /** Celulas editaveis de uma linha (existente ou a nova). */
+  function celulas(
+    r: Rascunho,
+    mudarCampo: (campo: keyof Rascunho, valor: string) => void,
+    aoEnter: () => void
+  ) {
+    const campo = (
+      nome: keyof Rascunho,
+      rotulo: string,
+      extra: React.InputHTMLAttributes<HTMLInputElement> = {}
+    ) => (
+      <input
+        aria-label={rotulo}
+        value={r[nome]}
+        disabled={!aberto}
+        onChange={(e) => mudarCampo(nome, e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") aoEnter();
+        }}
+        {...extra}
+      />
+    );
+    const efetiva = situacaoEfetiva(r);
+    const vencida = efetiva === "atrasado" && r.situacao !== "atrasado";
+    return (
+      <>
+        <td>{campo("o_que", "O que fazer?", { maxLength: 1000, placeholder: "O que fazer?" })}</td>
+        <td>{campo("por_que", "Por que fazer?", { maxLength: 1000 })}</td>
+        <td>{campo("onde", "Onde fazer?", { maxLength: 300 })}</td>
+        <td>{campo("quem", "Quem vai fazer?", { maxLength: 300 })}</td>
+        <td className="num">
+          {campo("quanto", "Quanto vai custar?", { maxLength: 20, inputMode: "decimal", placeholder: "0,00" })}
+        </td>
+        <td className="data">{campo("prazo", "Prazo", { type: "date" })}</td>
+        <td className={`status ${efetiva}`} title={vencida ? "Prazo vencido e ação não concluída" : undefined}>
+          <select
+            aria-label="Situação"
+            value={r.situacao}
+            disabled={!aberto}
+            onChange={(e) => mudarCampo("situacao", e.target.value)}
+          >
+            {OPCOES_SITUACAO_ACAO.map((o) => (
+              <option key={o.valor} value={o.valor}>
+                {o.valor === r.situacao && vencida ? "Vencida" : o.rotulo}
+              </option>
+            ))}
+          </select>
+        </td>
+        <td>{campo("observacao", "Observação", { maxLength: 2000 })}</td>
+      </>
+    );
+  }
 
   return (
     <>
       <Modal
         titulo={plano ? `Plano de ação ${plano.numero}` : "Plano de ação"}
-        subtitulo={plano ? `${plano.codigo_clockify} — ${plano.projeto_nome}` : undefined}
+        subtitulo={
+          plano ? `${plano.codigo_clockify} — ${plano.projeto_nome} · ciclo ${plano.ciclo_codigo}` : undefined
+        }
         largo
-        aoFechar={aoFechar}
+        aoFechar={fechar}
         acoes={acoesModal}
       >
         {erro ? <Aviso tipo="perigo">{erro}</Aviso> : null}
@@ -599,144 +744,160 @@ function ModalPlano({
 
         {plano ? (
           <>
-            {/* Formato da planilha modelo do PMO (images/): faixa de titulo,
-                quadro do cabecalho e tabela 5W2H com a situacao colorida. */}
-            <div className="plano-folha">
-              <div className="plano-folha-topo">
-                <div className="plano-folha-logo">
-                  <span role="img" aria-label="Seteg" />
-                </div>
-                <div className="plano-folha-titulo">PLANO DE AÇÃO</div>
+            {/* Cabecalho do plano. Assunto e objetivo: o PMO edita aqui mesmo. */}
+            <table className="plano-grade">
+              <tbody>
+                <tr>
+                  <th>Assunto</th>
+                  <td colSpan={3}>
+                    {ehPmo && aberto ? (
+                      <input
+                        aria-label="Assunto"
+                        value={cabecalho?.assunto ?? plano.assunto ?? ""}
+                        maxLength={200}
+                        onChange={(e) =>
+                          setCabecalho({
+                            assunto: e.target.value,
+                            objetivo: cabecalho?.objetivo ?? plano.objetivo ?? "",
+                          })
+                        }
+                      />
+                    ) : (
+                      plano.assunto
+                    )}
+                  </td>
+                  <th>Nº Plano</th>
+                  <td>{plano.numero}</td>
+                </tr>
+                <tr>
+                  <th>Objetivo</th>
+                  <td colSpan={3}>
+                    {ehPmo && aberto ? (
+                      <textarea
+                        aria-label="Objetivo"
+                        rows={2}
+                        value={cabecalho?.objetivo ?? plano.objetivo ?? ""}
+                        maxLength={4000}
+                        onChange={(e) =>
+                          setCabecalho({
+                            assunto: cabecalho?.assunto ?? plano.assunto ?? "",
+                            objetivo: e.target.value,
+                          })
+                        }
+                      />
+                    ) : (
+                      <span style={{ whiteSpace: "pre-wrap" }}>{plano.objetivo}</span>
+                    )}
+                  </td>
+                  <th>Situação</th>
+                  <td>
+                    <SeloPlano situacao={plano.situacao} />
+                  </td>
+                </tr>
+                <tr>
+                  <th>Responsável</th>
+                  <td>{plano.lider_nome || plano.responsavel_nome || "—"}</td>
+                  <th>Início</th>
+                  <td>{formatarData(plano.inicio)}</td>
+                  <th>Encerrado</th>
+                  <td>{plano.encerrado_em ? formatarData(plano.encerrado_em) : "—"}</td>
+                </tr>
+              </tbody>
+            </table>
+            {cabecalho ? (
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 }}>
+                <button type="button" className="btn-secondary" onClick={() => setCabecalho(null)} disabled={ocupado}>
+                  Descartar
+                </button>
+                <button type="button" className="btn-primary" onClick={salvarCabecalho} disabled={ocupado}>
+                  Salvar assunto e objetivo
+                </button>
               </div>
-              <div className="plano-folha-cab">
-                <div className="rot">Assunto:</div>
-                <div className="val">{plano.assunto}</div>
-                <div className="rot">Responsável:</div>
-                <div className="rot centro">Início:</div>
-                <div className="rot centro">Encerrado:</div>
-                <div className="rot centro">Nº Plano:</div>
-
-                <div className="rot">Objetivo:</div>
-                <div className="val">{plano.objetivo}</div>
-                <div className="val">{plano.lider_nome || plano.responsavel_nome || "—"}</div>
-                <div className="val centro">{formatarData(plano.inicio)}</div>
-                <div className="val centro">{plano.encerrado_em ? formatarData(plano.encerrado_em) : "—"}</div>
-                <div className="val centro">{plano.numero}</div>
-
-                <div className="rot ultima">Projeto:</div>
-                <div className="val ultima">
-                  {plano.codigo_clockify} — {plano.projeto_nome}
-                </div>
-                <div className="val ultima">Cliente: {plano.cliente_nome || "—"}</div>
-                <div className="val centro ultima">Ciclo {plano.ciclo_codigo}</div>
-                <div className="val centro ultima" style={{ gridColumn: "span 2" }}>
-                  <SeloPlano situacao={plano.situacao} />
-                </div>
-              </div>
-            </div>
+            ) : null}
 
             <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                margin: "20px 0 10px",
-              }}
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "18px 0 8px" }}
             >
               <strong style={{ fontSize: ".92rem" }}>Ações ({dados?.acoes.length || 0})</strong>
               {aberto ? (
-                <button type="button" className="btn-primary" onClick={() => setEditando(null)}>
-                  + Adicionar ação
-                </button>
+                <span className="td-sub">
+                  Edite direto nas células e salve a linha no ✓ (ou Enter). A última linha adiciona uma nova ação.
+                </span>
               ) : null}
             </div>
 
-            {!aberto ? (
-              <Aviso tipo="info">Plano encerrado: as ações ficam só para consulta.</Aviso>
-            ) : null}
+            {!aberto ? <Aviso tipo="info">Plano encerrado: as ações ficam só para consulta.</Aviso> : null}
 
-            {dados?.acoes.length ? (
-              <>
-                <div className="tabela-scroll">
-                  <table className="plano-tabela">
-                    <thead>
-                      <tr>
-                        <th>Item</th>
-                        <th>O que fazer?<small>"What"</small></th>
-                        <th>Por que fazer?<small>"Why"</small></th>
-                        <th>Onde fazer?<small>"Where"</small></th>
-                        <th>Quem vai fazer?<small>"Who"</small></th>
-                        <th>Quanto vai custar?<small>"How Much"</small></th>
-                        <th>Prazo<small>"When"</small></th>
-                        <th>Situação<small>"Status"</small></th>
-                        {aberto ? <th>Ações</th> : null}
+            <div className="tabela-scroll">
+              <table className="plano-tabela plano-edit">
+                <thead>
+                  <tr>
+                    <th style={{ width: 44 }}>Item</th>
+                    <th style={{ minWidth: 200 }}>O que fazer?</th>
+                    <th style={{ minWidth: 160 }}>Por que fazer?</th>
+                    <th style={{ minWidth: 110 }}>Onde fazer?</th>
+                    <th style={{ minWidth: 120 }}>Quem vai fazer?</th>
+                    <th style={{ minWidth: 100 }}>Quanto (R$)</th>
+                    <th style={{ minWidth: 135 }}>Prazo</th>
+                    <th style={{ minWidth: 135 }}>Situação</th>
+                    <th style={{ minWidth: 150 }}>Observação</th>
+                    {aberto ? <th style={{ width: 84 }} /> : null}
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginaAcoes.visiveis.map((a) => {
+                    const r = valorDe(a);
+                    const alterada = Boolean(edicoes[a.id]) && !iguais(edicoes[a.id], doBanco(a));
+                    return (
+                      <tr key={a.id} className={alterada ? "alterada" : undefined}>
+                        <td className="item">{a.ordem}</td>
+                        {celulas(
+                          r,
+                          (c, v) => mudar(a, c, v),
+                          () => {
+                            if (alterada) salvarLinha(a.id, r);
+                          }
+                        )}
+                        {aberto ? (
+                          <td className="acoes">
+                            <BotaoAcao
+                              icone="check"
+                              titulo={alterada ? "Salvar alterações da linha" : "Sem alterações"}
+                              onClick={() => salvarLinha(a.id, r)}
+                              desabilitado={!alterada || salvandoId === a.id}
+                            />
+                            <BotaoAcao icone="inativar" titulo="Remover ação" perigo onClick={() => setRemovendo(a)} />
+                          </td>
+                        ) : null}
                       </tr>
-                    </thead>
-                    <tbody>
-                      {paginaAcoes.visiveis.map((a) => {
-                        const s = SITUACAO_ACAO[a.situacao_efetiva] || SITUACAO_ACAO.no_prazo;
-                        const automatico = a.situacao_efetiva === "atrasado" && a.situacao !== "atrasado";
-                        return (
-                          <tr key={a.id}>
-                            <td className="item">{a.ordem}</td>
-                            <td>
-                              <span className="td-principal">{a.o_que}</span>
-                              {a.observacao ? (
-                                <span className="td-sub" style={{ display: "block" }}>
-                                  {a.observacao}
-                                </span>
-                              ) : null}
-                            </td>
-                            <td>{a.por_que || "—"}</td>
-                            <td>{a.onde || "—"}</td>
-                            <td>{a.quem || "—"}</td>
-                            <td className="num">{reais(a.quanto)}</td>
-                            <td className="data">{formatarData(a.prazo)}</td>
-                            <td
-                              className={`status ${a.situacao_efetiva}`}
-                              title={automatico ? "Prazo vencido e ação não concluída" : undefined}
-                            >
-                              {s.rotulo}
-                            </td>
-                            {aberto ? (
-                              <td className="acoes">
-                                <BotaoAcao icone="editar" titulo="Editar ação" onClick={() => setEditando(a)} />
-                                <BotaoAcao
-                                  icone="inativar"
-                                  titulo="Remover ação"
-                                  perigo
-                                  onClick={() => setRemovendo(a)}
-                                />
-                              </td>
-                            ) : null}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                {paginaAcoes.barra}
-              </>
-            ) : (
-              <p style={{ fontSize: ".85rem", color: "var(--text-muted)", padding: "10px 0" }}>
-                Nenhuma ação lançada ainda.
-              </p>
-            )}
+                    );
+                  })}
+
+                  {aberto ? (
+                    <tr className="nova">
+                      <td className="item">+</td>
+                      {celulas(
+                        nova,
+                        (c, v) => setNova((atual) => ({ ...atual, [c]: v })),
+                        () => salvarLinha(null, nova)
+                      )}
+                      <td className="acoes">
+                        <BotaoAcao
+                          icone="adicionar"
+                          titulo="Adicionar ação"
+                          onClick={() => salvarLinha(null, nova)}
+                          desabilitado={!nova.o_que.trim() || salvandoId === "nova"}
+                        />
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+            {paginaAcoes.barra}
           </>
         ) : null}
       </Modal>
-
-      {editando !== undefined && plano ? (
-        <ModalAcao
-          planoId={planoId}
-          acao={editando}
-          aoFechar={() => setEditando(undefined)}
-          aoSalvar={() => {
-            setEditando(undefined);
-            recarregarTudo();
-          }}
-        />
-      ) : null}
 
       {removendo ? (
         <Confirmacao
@@ -749,125 +910,5 @@ function ModalPlano({
         />
       ) : null}
     </>
-  );
-}
-
-// ─── Acao (criar/editar) ───────────────────────────────────────────────────
-
-function ModalAcao({
-  planoId,
-  acao,
-  aoFechar,
-  aoSalvar,
-}: {
-  planoId: string;
-  acao: Acao | null;
-  aoFechar: () => void;
-  aoSalvar: () => void;
-}) {
-  const toast = useToast();
-  const [oQue, setOQue] = useState(acao?.o_que || "");
-  const [porQue, setPorQue] = useState(acao?.por_que || "");
-  const [onde, setOnde] = useState(acao?.onde || "");
-  const [quem, setQuem] = useState(acao?.quem || "");
-  const [quanto, setQuanto] = useState(
-    acao?.quanto !== null && acao?.quanto !== undefined ? String(acao.quanto).replace(".", ",") : ""
-  );
-  const [prazo, setPrazo] = useState(acao?.prazo || "");
-  const [situacao, setSituacao] = useState(acao?.situacao || "no_prazo");
-  const [observacao, setObservacao] = useState(acao?.observacao || "");
-  const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
-
-  async function salvar() {
-    setErro(null);
-    setSalvando(true);
-    try {
-      await api.post(`planos-acao/${planoId}/acoes`, {
-        item_id: acao?.id,
-        o_que: oQue,
-        por_que: porQue,
-        onde,
-        quem,
-        quanto,
-        prazo,
-        situacao,
-        observacao,
-      });
-      toast(acao ? "Ação atualizada." : "Ação adicionada.", "sucesso");
-      aoSalvar();
-    } catch (e) {
-      setErro(e instanceof ErroApi ? e.message : "Não foi possível salvar a ação.");
-      setSalvando(false);
-    }
-  }
-
-  return (
-    <Modal
-      titulo={acao ? `Editar ação ${acao.ordem}` : "Nova ação"}
-      largo
-      aoFechar={aoFechar}
-      acoes={[
-        { rotulo: "Cancelar", classe: "btn-secondary", onClick: aoFechar },
-        {
-          rotulo: salvando ? "Salvando..." : "Salvar",
-          classe: "btn-primary",
-          onClick: salvar,
-          desabilitado: salvando,
-        },
-      ]}
-    >
-      {erro ? <Aviso tipo="perigo">{erro}</Aviso> : null}
-      <div className="form-grade">
-        <CampoArea
-          nome="o_que"
-          rotulo='O que fazer? ("What")'
-          obrigatorio
-          larguraTotal
-          linhas={2}
-          valor={oQue}
-          aoMudar={setOQue}
-          maxLength={1000}
-        />
-        <CampoArea
-          nome="por_que"
-          rotulo='Por que fazer? ("Why")'
-          larguraTotal
-          linhas={2}
-          valor={porQue}
-          aoMudar={setPorQue}
-          maxLength={1000}
-        />
-        <CampoTexto nome="onde" rotulo='Onde fazer? ("Where")' valor={onde} aoMudar={setOnde} maxLength={300} />
-        <CampoTexto nome="quem" rotulo='Quem vai fazer? ("Who")' valor={quem} aoMudar={setQuem} maxLength={300} />
-        <CampoTexto
-          nome="quanto"
-          rotulo='Quanto vai custar? ("How much")'
-          valor={quanto}
-          aoMudar={setQuanto}
-          placeholder="Ex.: 200,00"
-          maxLength={20}
-        />
-        <CampoTexto nome="prazo" rotulo="Prazo" tipo="date" valor={prazo} aoMudar={setPrazo} />
-        <CampoSelect
-          nome="situacao"
-          rotulo='Situação ("Status")'
-          valor={situacao}
-          aoMudar={setSituacao}
-          vazio={null}
-          opcoes={OPCOES_SITUACAO_ACAO}
-          ajuda="Com o prazo vencido e sem marcar Concluído, a ação aparece como Atrasada sozinha."
-        />
-        <CampoArea
-          nome="observacao"
-          rotulo="Observação / evidência"
-          larguraTotal
-          linhas={2}
-          valor={observacao}
-          aoMudar={setObservacao}
-          maxLength={2000}
-        />
-      </div>
-    </Modal>
   );
 }
