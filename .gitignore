@@ -1,0 +1,74 @@
+# ===== Pasta de segredos =====
+# secrets/ guarda material sensivel que NUNCA pode entrar no git: a lista de
+# e-mails e senhas iniciais lida por scripts/seed-usuarios.mjs, dumps de
+# usuario, chaves rotacionadas. So o README explicativo e versionado.
+secrets/*
+!secrets/README.md
+
+# ===== Segredos e ambiente =====
+# Nada de credencial versionada. As chaves do projeto ficam em .env.local,
+# que nasce a partir de .env.example.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ===== Node e build =====
+node_modules/
+.next/
+# Build de verificacao, para nao colidir com o .next do servidor de dev
+# (ver distDir em next.config.js).
+.next-build/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm
+
+# ===== Vercel =====
+.vercel
+
+# ===== Banco e backup =====
+# Nunca subir dump de banco nem copia de seguranca.
+bd/
+backup/
+export-dados.json
+
+# ===== Ferramentas e editores =====
+# O settings.local.json guarda preferencias de maquina, nao do projeto.
+.claude/settings.local.json
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== Sistema operacional =====
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ===== Temporarios e backups =====
+# ~$arquivo.docx e o bloqueio que o Word cria ao abrir os documentos de doc/.
+~$*
+*.bak
+*.tmp
+*.old
+_*.html
+
+# ===== Logs =====
+*.log
+
+# ===== Material de referencia =====
+# images/ guarda os arquivos-fonte que chegam para o projeto (fundo em PNG de
+# 5 MB, prints de modelos). O que o site usa ja foi otimizado para public/.
+images/

@@ -1,0 +1,298 @@
+/* Tela publica da pesquisa. Fundo claro institucional da Seteg
+   (public/imagens/fundo-pesquisa.jpg) e o formulario num cartao branco
+   translucido e largo, com o logo centralizado no topo dele, com texto em azul-marinho e cinza escuro para
+   leitura confortavel. Independente do shell
+   administrativo; arquivo proprio para a CSP nao precisar liberar estilo
+   inline por causa dele. */
+
+.pq-pagina {
+  --pq-marinho: #1d2b55;
+  --pq-marinho-forte: #14203f;
+  --pq-texto: #1f2937;
+  --pq-texto-suave: #4b5563;
+  --pq-borda: #cbd5e1;
+  --pq-borda-suave: #e5e7eb;
+  --pq-erro: #b91c1c;
+
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 20px;
+  color: var(--pq-texto);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 16px;
+}
+
+/* Fundo em camada fixa, e nao `background-attachment: fixed` no body: o
+   Safari do iPhone ignora o `fixed` e amplia a imagem ate a altura da pagina
+   inteira. */
+.pq-pagina::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: #f3f3f2 url('/imagens/fundo-pesquisa.jpg') center / cover no-repeat;
+}
+
+/* Logo centralizado no topo do cartao. O arquivo e branco; a mascara usa so o
+   desenho dele e o pinta com a cor da marca. Proporcao 3725 x 1513. */
+.pq-logo {
+  width: 180px;
+  aspect-ratio: 3725 / 1513;
+  margin-bottom: 14px;
+  background-color: var(--pq-marinho);
+  -webkit-mask: url('/imagens/logo.png') center / contain no-repeat;
+  mask: url('/imagens/logo.png') center / contain no-repeat;
+}
+
+.pq-container {
+  width: 100%;
+  max-width: 980px;
+  /* Ocupa quase a tela toda na vertical; o conteudo e distribuido para
+     dentro dele. */
+  min-height: calc(100vh - 56px);
+  min-height: calc(100dvh - 56px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 64px 44px;
+  /* Translucido: o fundo aparece atras, e o desfoque mantem o texto limpo
+     por cima da textura e dos circulos. */
+  background: rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(1px);
+  backdrop-filter: blur(1px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px -12px rgba(15, 23, 42, 0.18);
+}
+
+.pq-container h1 {
+  width: 100%;
+  margin-bottom: 14px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(29, 43, 85, 0.12);
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.9rem;
+  letter-spacing: 0.2px;
+  color: var(--pq-marinho);
+}
+
+.pq-cabecalho { align-self: flex-start; width: 100%; margin-bottom: 4px; }
+.pq-saudacao { font-size: 1.25rem; font-weight: 600; margin-bottom: 6px; color: var(--pq-marinho); }
+.pq-intro { font-size: 1.08rem; line-height: 1.55; color: var(--pq-texto-suave); }
+
+.pq-form { width: 100%; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
+
+/* Cada pergunta separada por um divisor fino, com o mesmo respiro acima e
+   abaixo. O legend flutua para virar bloco comum: sem isso o navegador o
+   desenha "dentro" da borda superior do fieldset, cortando o divisor. */
+.pq-pergunta { width: 100%; margin: 0; padding: 22px 0; border: none; min-width: 0; }
+.pq-pergunta + .pq-pergunta { border-top: 1px solid rgba(29, 43, 85, 0.12); }
+.pq-pergunta > legend { float: left; width: 100%; }
+.pq-pergunta > legend + * { clear: both; }
+.pq-pergunta > legend,
+.pq-pergunta > label {
+  display: block;
+  padding: 0;
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 1.08rem;
+  line-height: 1.45;
+  color: var(--pq-texto);
+}
+.pq-feedback { margin-bottom: 8px; }
+
+.pq-asterisco { color: var(--pq-erro); font-weight: 700; }
+.pq-so-leitor {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+
+/* Notas 0–10: botoes neutros de mesmo peso, para a cor nao sugerir resposta.
+   A nota escolhida fica preenchida em azul-marinho. Os 11 dividem a largura
+   toda do cartao. */
+.pq-notas { display: flex; gap: 8px; }
+.pq-nota {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 50px;
+  border: 1px solid var(--pq-borda);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--pq-marinho);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.pq-nota:hover:not(:disabled) { border-color: var(--pq-marinho); background: #f1f4fa; }
+.pq-nota[aria-pressed="true"],
+.pq-nota[aria-pressed="true"]:hover {
+  background: var(--pq-marinho);
+  border-color: var(--pq-marinho);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px -4px rgba(29, 43, 85, 0.6);
+}
+.pq-nota:disabled { cursor: default; }
+
+.pq-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 14px;
+  border: 1px solid var(--pq-borda);
+  border-radius: 8px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  background-color: #fff;
+  color: var(--pq-texto);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.pq-textarea::placeholder { color: #6b7280; }
+.pq-textarea:focus {
+  outline: none;
+  border-color: var(--pq-marinho);
+  box-shadow: 0 0 0 3px rgba(29, 43, 85, 0.15);
+}
+
+/* Sem espaco reservado: vazio, some, e o respiro entre perguntas fica
+   igual em todas. So ocupa lugar quando ha mensagem. */
+.pq-erro:empty { display: none; }
+.pq-erro {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--pq-erro);
+}
+
+.pq-enviar {
+  min-width: 220px;
+  margin-top: 14px;
+  padding: 13px 45px;
+  border: none;
+  border-radius: 8px;
+  background: var(--pq-marinho);
+  color: #fff;
+  font-family: inherit;
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.pq-enviar:hover:not(:disabled) {
+  background: var(--pq-marinho-forte);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px -8px rgba(20, 32, 63, 0.7);
+}
+.pq-enviar:disabled { opacity: 0.7; cursor: default; }
+
+.pq-processando {
+  margin-top: 10px;
+  min-height: 1.2em;
+  font-size: 0.92rem;
+  text-align: center;
+  color: var(--pq-texto-suave);
+}
+
+/* Agradecimento sobreposto, e as mensagens de link invalido/encerrado/ja
+   respondido, que usam o mesmo cartao. */
+.pq-sobreposicao {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.pq-final {
+  position: relative;
+  width: 100%;
+  max-width: 450px;
+  padding: 40px 30px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid var(--pq-borda-suave);
+  border-radius: 16px;
+  box-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.35);
+  animation: pq-sobe 0.4s ease-out;
+}
+/* Dentro do cartao da pagina (link invalido, ja respondida) nao precisa de
+   um segundo cartao em volta. */
+.pq-container > .pq-final { margin: auto 0; background: transparent; border: none; box-shadow: none; padding: 16px 0 8px; }
+.pq-final h2 { margin-bottom: 12px; font-size: 1.45rem; font-weight: 700; color: var(--pq-marinho); }
+.pq-final p { margin: 10px 0; font-size: 1rem; line-height: 1.55; color: var(--pq-texto-suave); }
+
+.pq-icone {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #15803d;
+  box-shadow: 0 8px 22px -6px rgba(21, 128, 61, 0.55);
+  animation: pq-surge 0.5s ease-out 0.2s both;
+}
+.pq-icone.erro {
+  background: var(--pq-erro);
+  box-shadow: 0 8px 22px -6px rgba(185, 28, 28, 0.5);
+}
+
+@keyframes pq-sobe {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pq-surge {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.pq-nota:focus-visible,
+.pq-enviar:focus-visible { outline: 3px solid rgba(29, 43, 85, 0.35); outline-offset: 2px; }
+
+/* Celular */
+@media (max-width: 600px) {
+  .pq-pagina { padding: 28px 12px 24px; }
+  .pq-logo { width: 130px; margin-bottom: 10px; }
+  .pq-container { min-height: calc(100dvh - 52px); padding: 24px 18px 22px; border-radius: 14px; }
+  .pq-notas { gap: 5px; }
+  .pq-nota { height: 44px; font-size: 0.95rem; }
+  .pq-container h1 { font-size: 1.35rem; margin-bottom: 10px; padding-bottom: 12px; }
+  .pq-saudacao { font-size: 1.08rem; }
+  .pq-intro { font-size: 0.98rem; }
+  .pq-pergunta { padding: 14px 0; }
+  .pq-pergunta > legend,
+  .pq-pergunta > label { font-size: 0.96rem; margin-bottom: 8px; }
+  .pq-textarea { min-height: 80px; font-size: 1rem; } /* 16px: evita o zoom do iOS ao focar */
+  .pq-enviar { width: 100%; max-width: 280px; min-width: 0; padding: 13px 20px; }
+  .pq-final { padding: 30px 20px; }
+  .pq-icone { width: 64px; height: 64px; }
+  .pq-final h2 { font-size: 1.3rem; }
+}
+
+/* Telas estreitas (ate ~440px): os 11 botoes continuam numa linha so, como a
+   escala 0–10 deve ser lida, so que mais baixos e juntos. */
+@media (max-width: 440px) {
+  .pq-notas { gap: 4px; }
+  .pq-nota { height: 38px; font-size: 0.85rem; border-radius: 6px; }
+}
+

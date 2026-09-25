@@ -1,0 +1,37 @@
+{
+  "name": "dashboard-nps-seteg",
+  "version": "3.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:verificar": "node scripts/build-verificar.mjs",
+    "start": "next start",
+    "lint": "next lint",
+    "check": "node scripts/verificar-config.mjs",
+    "test": "node --import ./tests/alias.mjs --test \"tests/*.test.mjs\"",
+    "sincronizar:agendado": "node scripts/sincronizar-projetos-agendado.mjs",
+    "comparar:motores": "node --import ./tests/alias.mjs scripts/comparar-motores.mjs"
+  },
+  "dependencies": {
+    "jose": "^6.2.8",
+    "jspdf": "^2.5.2",
+    "next": "^14.2.35",
+    "pg": "^8.23.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.6",
+    "typescript": "^5.5.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
