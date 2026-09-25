@@ -7,6 +7,7 @@
 // Todos os demais filtros valem.
 
 import { normalizar, type Projeto, type Resposta } from "@/lib/dashboard";
+import { usePaginacaoLocal } from "@/componentes/Paginacao";
 import type { Filtros } from "./filtros";
 
 // Antes eram constantes ("2025.2" / "2026.1"). Passaram a vir por prop pelo
@@ -148,7 +149,15 @@ export function IncidenciaComparativa({
 
   linhas.sort((a, b) => `${a.cliente}${a.projeto}`.localeCompare(`${b.cliente}${b.projeto}`));
 
+  return <TabelaComparativa linhas={linhas} ANTERIOR={ANTERIOR} ATUAL={ATUAL} />;
+}
+
+/** Tabela da comparacao, paginada de 10 em 10 (componente proprio porque o
+ *  pai tem retornos antecipados e hook nao pode vir depois deles). */
+function TabelaComparativa({ linhas, ANTERIOR, ATUAL }: { linhas: Linha[]; ANTERIOR: string; ATUAL: string }) {
+  const pagina = usePaginacaoLocal(linhas);
   return (
+    <>
     <div className="table-wrapper">
       <table className="incidencia-comp-table">
         <thead>
@@ -165,7 +174,7 @@ export function IncidenciaComparativa({
           </tr>
         </thead>
         <tbody>
-          {linhas.map((r) => (
+          {pagina.visiveis.map((r) => (
             <tr key={r.ck}>
               <td>{r.cliente}</td>
               <td>{r.projeto}</td>
@@ -191,5 +200,7 @@ export function IncidenciaComparativa({
         </tbody>
       </table>
     </div>
+    {pagina.barra}
+    </>
   );
 }

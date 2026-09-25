@@ -43,7 +43,7 @@ export function useLista<T>(
   {
     ordemInicial,
     filtros = {},
-    porPaginaInicial = 25,
+    porPaginaInicial = 10,
   }: {
     ordemInicial: Ordem;
     /** Filtros da tela. Passe um objeto memoizado ou estavel. */

@@ -9,6 +9,7 @@
 // vantagem de que reabrir nao remonta HTML a mao.
 
 import { useState } from "react";
+import { usePaginacaoLocal } from "@/componentes/Paginacao";
 import {
   chaveDoProjeto,
   chaveValida,
@@ -84,6 +85,10 @@ export function Incidencia({
   respondidos.sort(ordenar);
   naoRespondidos.sort(ordenar);
 
+  // Listas longas: paginadas de 10 em 10 dentro de cada sanfona.
+  const pagResp = usePaginacaoLocal(respondidos);
+  const pagNao = usePaginacaoLocal(naoRespondidos);
+
   return (
     <div className="incidencia-accordion">
       <div className={`incidencia-accordion-item respondido ${aberto === "resp" ? "open" : ""}`}>
@@ -125,7 +130,7 @@ export function Incidencia({
                 </thead>
                 <tbody>
                   {respondidos.length ? (
-                    respondidos.map((r) => (
+                    pagResp.visiveis.map((r) => (
                       <tr key={chaveDoProjeto(r)}>
                         <td>{r.ciclo || "-"}</td>
                         <td title={r.cliente || ""}>{r.cliente || "-"}</td>
@@ -147,6 +152,7 @@ export function Incidencia({
                   )}
                 </tbody>
               </table>
+              {pagResp.barra}
             </div>
           ) : null}
         </div>
@@ -192,7 +198,7 @@ export function Incidencia({
                 </thead>
                 <tbody>
                   {naoRespondidos.length ? (
-                    naoRespondidos.map((p) => (
+                    pagNao.visiveis.map((p) => (
                       <tr key={chaveDoProjeto(p)}>
                         <td>{p.ciclo || "-"}</td>
                         <td title={p.cliente || ""}>{p.cliente || "-"}</td>
@@ -215,6 +221,7 @@ export function Incidencia({
                   )}
                 </tbody>
               </table>
+              {pagNao.barra}
             </div>
           ) : null}
         </div>

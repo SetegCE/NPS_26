@@ -7,6 +7,7 @@
 // a tabela viria com uma linha so, a dele.
 
 import { chaveDoProjeto, chaveValida, normalizar, type Projeto, type Resposta } from "@/lib/dashboard";
+import { usePaginacaoLocal } from "@/componentes/Paginacao";
 
 interface Estatistica {
   lider: string;
@@ -71,6 +72,8 @@ export function LideresAdmin({
     .filter((r) => r.responderam === 0 && r.totalProjetos > 0)
     .sort((a, b) => a.lider.localeCompare(b.lider));
 
+  const pagina = usePaginacaoLocal(estatisticas);
+
   const classeTaxa = (t: number) => (t >= 75 ? "nps-bom" : t >= 50 ? "nps-medio" : "nps-ruim");
   const classeNps = (n: number) => (n >= 50 ? "nps-bom" : n >= 0 ? "nps-medio" : "nps-ruim");
 
@@ -89,7 +92,7 @@ export function LideresAdmin({
             </tr>
           </thead>
           <tbody>
-            {estatisticas.map((r) => (
+            {pagina.visiveis.map((r) => (
               <tr key={r.lider}>
                 <td>
                   <strong>{r.lider}</strong>
@@ -106,6 +109,7 @@ export function LideresAdmin({
           </tbody>
         </table>
       </div>
+      {pagina.barra}
 
       {semAdesao.length ? (
         <div className="lideres-sem-adesao">

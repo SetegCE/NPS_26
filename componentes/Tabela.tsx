@@ -3,6 +3,7 @@
 // Tabela e paginacao das telas administrativas.
 
 import { EstadoVazio } from "@/componentes/Estados";
+import { usePaginacaoLocal } from "@/componentes/Paginacao";
 import { Icone, type NomeIcone } from "@/componentes/Icone";
 import type { Ordem } from "@/lib/cliente/tipos";
 
@@ -21,6 +22,8 @@ export function Tabela<T extends Record<string, unknown>>({
   aoOrdenar,
   chaveDaLinha,
   vazio = "Nenhum registro encontrado.",
+  paginar = true,
+  porPaginaInicial = 10,
 }: {
   colunas: Coluna<T>[];
   linhas: T[];
@@ -28,10 +31,20 @@ export function Tabela<T extends Record<string, unknown>>({
   aoOrdenar?: (campo: string) => void;
   chaveDaLinha: (linha: T, indice: number) => string;
   vazio?: string;
+  /** Pagina no proprio navegador (padrao). Quem ja pagina no servidor
+   *  (CorpoLista/useLista) passa false. */
+  paginar?: boolean;
+  porPaginaInicial?: number;
 }) {
+  // Paginacao local: listas que chegam inteiras (planos, ciclos, ISC...) nao
+  // viram uma rolagem sem fim. Quem ja pagina no servidor passa paginar=false.
+  const local = usePaginacaoLocal(linhas, porPaginaInicial);
+  const visiveis = paginar ? local.visiveis : linhas;
+
   if (!linhas.length) return <EstadoVazio titulo={vazio} />;
 
   return (
+    <>
     <div className="tabela-scroll">
       <table className="tabela-modulo">
         <thead>
@@ -54,7 +67,7 @@ export function Tabela<T extends Record<string, unknown>>({
           </tr>
         </thead>
         <tbody>
-          {linhas.map((linha, i) => (
+          {visiveis.map((linha, i) => (
             <tr key={chaveDaLinha(linha, i)}>
               {colunas.map((c) => (
                 // `data-rotulo` alimenta o layout de cartao no mobile, onde as
@@ -68,6 +81,8 @@ export function Tabela<T extends Record<string, unknown>>({
         </tbody>
       </table>
     </div>
+    {paginar ? local.barra : null}
+    </>
   );
 }
 

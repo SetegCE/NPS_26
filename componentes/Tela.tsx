@@ -139,6 +139,7 @@ export function CorpoLista<T extends Record<string, unknown>>({
           aoOrdenar={lista.ordenarPor}
           chaveDaLinha={chaveDaLinha}
           vazio={vazio}
+          paginar={false}
         />
       </div>
       {lista.total > 0 ? (
