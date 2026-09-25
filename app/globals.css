@@ -568,6 +568,10 @@ tbody tr:last-child td { border-bottom: 0; }
 .feedback-cell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); font-size: 0.79rem; font-style: italic; }
 .col-media { font-weight: 700; color: var(--blue-text); }
 .acoes-cell { text-align: center; }
+/* Tabela "Respostas" do dashboard: titulo e conteudo de TODAS as colunas
+   centralizados, cada informacao embaixo do proprio titulo. */
+#tabela-respostas th,
+#tabela-respostas td { text-align: center; }
 .btn-acoes { background: var(--surface-2); border: 1px solid var(--line-soft); cursor: pointer; color: var(--text-muted); padding: 6px; border-radius: 6px; display: inline-grid; place-items: center; transition: var(--transition); }
 .btn-acoes:hover { color: var(--blue-text); background: rgba(44, 86, 151, 0.16); border-color: rgba(44, 86, 151, 0.32); transform: scale(1.06); }
 
