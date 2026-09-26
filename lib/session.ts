@@ -42,6 +42,38 @@ interface LinhaUsuario {
   senha_hash: string;
 }
 
+// ── Cache curto da conta, ENTRE requisicoes ──────────────────────────────
+//
+// Cada chamada a API reconferia a conta no banco antes de fazer qualquer
+// coisa. Com o banco a ~300ms daqui (Supabase em us-west-2), isso era uma
+// ida e volta inteira de espera em TODA chamada — o dashboard faz de 2 a 3
+// em sequencia. A conta muda raramente; por isso a linha fica 60s em memoria.
+//
+// O que continua valendo: editar a conta (desativar, trocar senha/papel)
+// pela tela de Lideres chama esquecerConta() e derruba o cache na hora. So
+// uma mudanca feita por fora do sistema (direto no banco) pode levar ate 60s
+// para valer.
+const TTL_CONTA_MS = 60_000;
+const contasEmCache = new Map<string, { linha: LinhaUsuario; ate: number }>();
+
+/** Descarta a conta do cache (chamar ao editar a conta). */
+export function esquecerConta(usuarioId: string): void {
+  contasEmCache.delete(usuarioId);
+}
+
+async function contaDoBanco(usuarioId: string): Promise<LinhaUsuario | null> {
+  const guardada = contasEmCache.get(usuarioId);
+  if (guardada && guardada.ate > Date.now()) return guardada.linha;
+  const linha = await um<LinhaUsuario>(
+    "usuarios_nps",
+    { id: usuarioId },
+    "id,nome,email,papel,lider_id,ativo,senha_hash"
+  );
+  if (linha) contasEmCache.set(usuarioId, { linha, ate: Date.now() + TTL_CONTA_MS });
+  else contasEmCache.delete(usuarioId);
+  return linha;
+}
+
 /**
  * Sessao vigente, ja reconferida no banco. `null` quando nao ha cookie, o
  * token nao confere, a credencial foi desativada ou a senha mudou.
@@ -69,11 +101,7 @@ export const getSessao = cache(async function getSessao(): Promise<SessaoPayload
   if (!sessao) return null;
 
   try {
-    const usuario = await um<LinhaUsuario>(
-      "usuarios_nps",
-      { id: sessao.usuarioId },
-      "id,nome,email,papel,lider_id,ativo,senha_hash"
-    );
+    const usuario = await contaDoBanco(sessao.usuarioId);
     if (!usuario || !usuario.ativo) return null;
     if (impressaoDaCredencial(usuario.senha_hash) !== sessao.cred) return null;
 

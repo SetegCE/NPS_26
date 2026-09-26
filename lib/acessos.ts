@@ -31,7 +31,7 @@ import {
 } from "@/lib/http";
 import { atualizar, auditar, type FiltroValor, inserir, selecionar, um } from "@/lib/db";
 import { gerarHash } from "@/lib/senha";
-import { exigirPmo } from "@/lib/session";
+import { esquecerConta, exigirPmo } from "@/lib/session";
 
 /**
  * Colunas que podem atravessar a fronteira servidor→cliente.
@@ -278,6 +278,8 @@ export async function editarConta(req: Request): Promise<NextResponse> {
   if (!Object.keys(campos).length) return json({ item: antes });
 
   const [depois] = await atualizar<Record<string, unknown>[]>("usuarios_nps", { id }, campos);
+  // Desativar/trocar senha precisa valer ja na proxima requisicao.
+  esquecerConta(id);
 
   if ("ativo" in campos) {
     await auditar({

@@ -48,25 +48,33 @@ export async function GET(req: Request) {
     const situacao = umDe(query.get("situacao"), SITUACOES, "situacao");
     if (situacao) filtros.situacao = situacao;
 
-    const { dados: planos } = await selecionar<Record<string, unknown>[]>("vw_planos_acao", {
-      colunas: "*",
-      filtros,
-      ordem: { campo: "created_at", ascending: false },
-    });
-
     // Pendentes (so para o PMO): projeto elegivel, com resposta no ciclo, e
     // ainda sem decisao. E a pergunta "e passivel de plano de acao?" em aberto.
+    // As duas consultas saem juntas: com o banco longe, em fila elas somavam
+    // duas idas e voltas inteiras.
+    const querPendentes = sessao.perfil !== PERFIL_LIDER && !situacao;
+    const [{ dados: planos }, consultaPendentes] = await Promise.all([
+      selecionar<Record<string, unknown>[]>("vw_planos_acao", {
+        colunas: "*",
+        filtros,
+        ordem: { campo: "created_at", ascending: false },
+      }),
+      querPendentes
+        ? selecionar<Participacao[]>("vw_operacao_ciclo", {
+            colunas: "projeto_id,ciclo_id,ciclo,codigo_clockify,projeto_nome,cliente_nome,lider_ciclo,respostas",
+            filtros: {
+              elegivel: true,
+              respostas: { op: "gt", valor: 0 },
+              ...(ciclo ? { ciclo_id: ciclo } : {}),
+            },
+            ordem: { campo: "projeto_nome", ascending: true },
+          })
+        : Promise.resolve(null),
+    ]);
+
     let pendentes: Participacao[] = [];
-    if (sessao.perfil !== PERFIL_LIDER && !situacao) {
-      const { dados: participacoes } = await selecionar<Participacao[]>("vw_operacao_ciclo", {
-        colunas: "projeto_id,ciclo_id,ciclo,codigo_clockify,projeto_nome,cliente_nome,lider_ciclo,respostas",
-        filtros: {
-          elegivel: true,
-          respostas: { op: "gt", valor: 0 },
-          ...(ciclo ? { ciclo_id: ciclo } : {}),
-        },
-        ordem: { campo: "projeto_nome", ascending: true },
-      });
+    if (consultaPendentes) {
+      const participacoes = consultaPendentes.dados;
       const decididos = new Set(
         (planos || []).map((p) => `${p.projeto_id}|${p.ciclo_id}`)
       );
