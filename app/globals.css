@@ -1861,3 +1861,18 @@ table.tabela-modulo th.td-centro { text-align: center; }
    parecer centralizado. */
 .sidebar-header { min-height: var(--header-height); height: var(--header-height); padding: 0 16px; flex-shrink: 0; }
 .sidebar-logo { height: 38px; width: auto; max-width: 150px; object-fit: contain; transform: translateY(5px); }
+
+/* ─── Cards do dashboard sempre na mesma linha no computador ────────────
+   Com 7 cartoes e colunas de no minimo 168px, o ISC caia para a linha de
+   baixo em qualquer tela com menos de ~1500px de largura. Acima de 1080px
+   (computador) sao sempre 7 colunas; o titulo pode quebrar em duas linhas
+   em vez de ser cortado, e o icone fica um pouco menor. Tablet e celular
+   seguem com as regras de antes. */
+@media (min-width: 1081px) {
+  .kpi-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+  .kpi-card { padding: 14px 10px 14px 16px; gap: 9px; }
+  .kpi-icon { width: 32px; height: 32px; border-radius: 9px; }
+  .kpi-icon svg { width: 17px; height: 17px; }
+  .kpi-content h3 { white-space: normal; line-height: 1.25; overflow: visible; }
+  .kpi-value { font-size: clamp(1.25rem, 1.6vw, 1.7rem); }
+}
