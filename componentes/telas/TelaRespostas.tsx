@@ -6,6 +6,7 @@
 
 import { useMemo, useState } from "react";
 import { ModalDetalhes } from "@/componentes/Detalhes";
+import { useExclusao } from "@/componentes/Excluir";
 import { BotaoAcao, type Coluna } from "@/componentes/Tabela";
 import {
   BarraFiltros,
@@ -15,7 +16,7 @@ import {
   FiltroSelect,
   Selo,
 } from "@/componentes/Tela";
-import { auxiliares, useAuxiliar } from "@/lib/cliente/auxiliares";
+import { auxiliares, useAuxiliar, useCicloAtual } from "@/lib/cliente/auxiliares";
 import { useLista } from "@/lib/cliente/useLista";
 import { categoriaDaNota, formatarData, rotuloDoCanal } from "@/lib/formato";
 import type { Sessao } from "@/lib/cliente/tipos";
@@ -37,6 +38,8 @@ interface Resposta extends Record<string, unknown> {
   cliente_nome: string | null;
   lider_periodo: string | null;
   categoria: string | null;
+  /** Resposta única para vários projetos (um link por pessoa no ciclo). */
+  grupo_projetos?: string | null;
 }
 
 interface Resumo {
@@ -78,7 +81,7 @@ const VAZIO = { ciclo: "", cliente: "", lider: "", categoria: "" };
 
 export function TelaRespostas({ sessao }: { sessao: Sessao }) {
   const ehPmo = sessao.perfil === "pmo";
-  const ciclos = useAuxiliar(auxiliares.ciclos);
+  const { ciclos, pronto } = useCicloAtual((id) => setF((atual) => ({ ...atual, ciclo: id })));
   const clientes = useAuxiliar(auxiliares.clientes);
   const lideres = useAuxiliar(auxiliares.lideres);
 
@@ -88,8 +91,10 @@ export function TelaRespostas({ sessao }: { sessao: Sessao }) {
   const lista = useLista<Resposta>("respostas", {
     ordemInicial: { campo: "timestamp", ascending: false },
     filtros,
+    pausado: !pronto,
   });
   const resumo = lista.extra.resumo as Resumo | undefined;
+  const exclusao = useExclusao(() => lista.recarregar());
   const mudar = (campo: keyof typeof VAZIO, valor: string) => setF((atual) => ({ ...atual, [campo]: valor }));
 
   const colunas: Coluna<Resposta>[] = [
@@ -113,7 +118,16 @@ export function TelaRespostas({ sessao }: { sessao: Sessao }) {
       chave: "respondente_nome",
       rotulo: "Respondente",
       ordenavel: true,
-      render: (l) => l.respondente_nome || l.identificador || "—",
+      render: (l) => (
+        <>
+          {l.respondente_nome || l.identificador || "—"}
+          {l.grupo_projetos ? (
+            <span className="td-sub selo-link-unico" style={{ display: "block" }} title={l.grupo_projetos}>
+              Resposta única · vale para {l.grupo_projetos.split("; ").length} projetos
+            </span>
+          ) : null}
+        </>
+      ),
     },
     { chave: "lider_periodo", rotulo: "Líder", ordenavel: true, render: (l) => l.lider_periodo || "—" },
     { chave: "q1", rotulo: "Q1", classe: "td-centro", render: (l) => <Nota valor={l.nota_q1} /> },
@@ -126,7 +140,14 @@ export function TelaRespostas({ sessao }: { sessao: Sessao }) {
       chave: "acoes",
       rotulo: "Ações",
       classe: "td-acoes",
-      render: (l) => <BotaoAcao icone="ver" titulo="Ver resposta completa" onClick={() => setVendo(l)} />,
+      render: (l) => (
+        <>
+          <BotaoAcao icone="ver" titulo="Ver resposta completa" onClick={() => setVendo(l)} />
+          {ehPmo
+            ? exclusao.botao("resposta", l.id, `a resposta de ${l.respondente_nome || l.identificador} (${l.codigo_clockify || "—"})`)
+            : null}
+        </>
+      ),
     },
   ];
 
@@ -243,6 +264,9 @@ export function TelaRespostas({ sessao }: { sessao: Sessao }) {
             { rotulo: "Líder do período", valor: vendo.lider_periodo },
             { rotulo: "Canal", valor: vendo.canal_resposta ? rotuloDoCanal(vendo.canal_resposta) : null },
             { rotulo: "Categoria", valor: <SeloCategoria categoria={vendo.categoria} /> },
+            ...(vendo.grupo_projetos
+              ? [{ rotulo: "Resposta única para os projetos", valor: vendo.grupo_projetos }]
+              : []),
           ]}
         >
           <div style={{ display: "grid", gap: 12, fontSize: ".88rem", lineHeight: 1.5 }}>
@@ -275,6 +299,7 @@ export function TelaRespostas({ sessao }: { sessao: Sessao }) {
           </div>
         </ModalDetalhes>
       ) : null}
+      {exclusao.modal}
     </>
   );
 }

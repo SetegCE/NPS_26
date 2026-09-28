@@ -182,14 +182,10 @@ export function DashboardClient({ sessao }: { sessao: Sessao }) {
         if (!ativo) return;
 
         setRespostas(rs || []);
-        // O filtro de Ciclo abre em "Todos", e nao no ciclo corrente: o
-        // painel deve mostrar tambem o que veio do ciclo anterior. Quem quer
-        // olhar um semestre isolado usa o filtro.
-        //
-        // `cicloRecente` continua definindo a ORDEM do carregamento — as
-        // respostas que mais interessam chegam primeiro, o histórico vem
-        // logo atrás. Escolher o ciclo e escolher o que mostrar sao duas
-        // decisoes diferentes, e antes estavam grudadas.
+        // O painel abre no ciclo atual, como todas as abas; quem quer ver
+        // tudo troca o filtro para "Todos". O histórico continua chegando
+        // logo atrás (fase 3), então a troca é instantânea.
+        if (cicloRecente) setFiltros((f) => ({ ...f, ciclo: cicloRecente }));
         setConexao("ok");
         setAtualizadoEm(new Date());
 
@@ -643,7 +639,11 @@ export function DashboardClient({ sessao }: { sessao: Sessao }) {
             </div>
           ) : null}
 
-          <TabelaRespostas dados={respostasFiltradas} />
+          <TabelaRespostas
+            dados={respostasFiltradas}
+            ehPmo={ehPmo}
+            aoExcluir={(id) => setRespostas((atuais) => atuais.filter((r) => String(r.id) !== id))}
+          />
         </section>
       </main>
 

@@ -109,6 +109,9 @@ export interface Resposta {
   feedback: string | null;
   timestamp: string | null;
   respondente_id: string | null;
+  /** Resposta única para vários projetos (um link por pessoa no ciclo):
+   *  "código — nome; ...". Nulo = resposta de um projeto só. */
+  grupo_projetos: string | null;
   semProjeto: boolean;
   /** Chave de contagem herdada do projeto vinculado — NUNCA da resposta crua.
    *  E ela que decide o que conta como "projeto respondido". */
@@ -321,6 +324,7 @@ export function processarRespostas(
       feedback: row.feedback ?? null,
       timestamp: row.timestamp ?? null,
       respondente_id: row.respondente_id ?? null,
+      grupo_projetos: typeof row.grupo_projetos === "string" ? row.grupo_projetos : null,
       semProjeto: !pm,
       projetoContagemKey: pm ? chaveDoProjeto(pm) : null,
     };

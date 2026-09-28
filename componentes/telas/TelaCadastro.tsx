@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CampoTexto } from "@/componentes/Campo";
 import { GradeDetalhes } from "@/componentes/Detalhes";
+import { useExclusao } from "@/componentes/Excluir";
 import { Confirmacao, Modal } from "@/componentes/Modal";
 import { BotaoAcao, type Coluna, Tabela } from "@/componentes/Tabela";
 import {
@@ -170,6 +171,10 @@ export function TelaCadastro({
   const lista = useLista<Registro>(recurso, {
     ordemInicial: { campo: "nome", ascending: true },
     filtros,
+  });
+  const exclusao = useExclusao(() => {
+    lista.recarregar();
+    if (gerindoAcessos) contas.recarregar();
   });
 
   /**
@@ -346,6 +351,13 @@ export function TelaCadastro({
                 onClick={() => setAlternandoConta({ linha: l, conta })}
               />
             ) : null}
+            {/* Linha da direção é conta pura: exclui a conta. As demais
+                excluem o cadastro (o do líder leva junto a conta de líder). */}
+            {l.direcao
+              ? conta
+                ? exclusao.botao("conta", conta.id, `a conta de acesso de ${l.nome}`, ehEu)
+                : null
+              : exclusao.botao(recurso === "lideres" ? "lider" : "cliente", String(l.id), `${cfg.singular === "líder" ? "o líder" : "o cliente"} ${l.nome}`)}
           </>
         );
       },
@@ -449,6 +461,7 @@ export function TelaCadastro({
           aoCancelar={() => setAlternandoConta(null)}
         />
       ) : null}
+      {exclusao.modal}
     </>
   );
 }

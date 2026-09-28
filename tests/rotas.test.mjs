@@ -110,14 +110,16 @@ describe("o que o líder não pode alcançar", () => {
     }
   });
 
-  test("a auditoria e as contas de acesso são as únicas APIs exclusivas", () => {
+  test("auditoria, contas de acesso e exclusão são as únicas APIs exclusivas", () => {
     assert.equal(ehSoPmo("/api/auditoria"), true);
     assert.equal(ehSoPmo("/api/usuarios"), true);
+    // Botão Excluir: só aparece para a direção; o líder nunca chama.
+    assert.equal(ehSoPmo("/api/excluir"), true);
 
     const apisBloqueadas = PREFIXOS_SO_PMO.filter((p) => p.startsWith("/api/"));
     assert.deepEqual(
       apisBloqueadas,
-      ["/api/auditoria", "/api/usuarios"],
+      ["/api/auditoria", "/api/usuarios", "/api/excluir"],
       "outra rota de API entrou na lista de exclusivas — confira se o líder não depende dela"
     );
   });

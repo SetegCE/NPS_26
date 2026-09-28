@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { AvisoIsc } from "@/componentes/AvisoIsc";
 import { Icone } from "@/componentes/Icone";
 import { Sidebar } from "@/componentes/Sidebar";
 import { ProvedorToast } from "@/componentes/Toast";
@@ -54,6 +55,7 @@ export function Shell({ sessao, children }: { sessao: Sessao; children: React.Re
           {temContainerProprio ? children : <div className="view-container">{children}</div>}
         </div>
       </div>
+      <AvisoIsc sessao={sessao} />
     </ProvedorToast>
   );
 }

@@ -93,17 +93,20 @@ export function BotaoAcao({
   onClick,
   perigo = false,
   desabilitado = false,
+  destaque = false,
 }: {
   icone: NomeIcone;
   titulo: string;
   onClick: () => void;
   perigo?: boolean;
   desabilitado?: boolean;
+  /** Botao principal da linha (ex.: salvar com alteracao pendente). */
+  destaque?: boolean;
 }) {
   return (
     <button
       type="button"
-      className={`btn-acoes ${perigo ? "perigo" : ""}`}
+      className={`btn-acoes ${perigo ? "perigo" : ""} ${destaque ? "destaque" : ""}`}
       title={titulo}
       aria-label={titulo}
       onClick={onClick}

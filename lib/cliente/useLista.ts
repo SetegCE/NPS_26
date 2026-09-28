@@ -46,8 +46,12 @@ export function useLista<T>(
     ordemInicial,
     filtros = {},
     porPaginaInicial = 10,
+    pausado = false,
   }: {
     ordemInicial: Ordem;
+    /** Segura a consulta (ex.: enquanto o ciclo inicial nao foi decidido —
+     *  useCicloAtual). A lista fica em "carregando" ate liberar. */
+    pausado?: boolean;
     /** Filtros da tela. Passe um objeto memoizado ou estavel. */
     filtros?: Params;
     porPaginaInicial?: number;
@@ -85,6 +89,7 @@ export function useLista<T>(
   }, [filtrosChave, buscaAplicada]);
 
   useEffect(() => {
+    if (pausado) return;
     abortRef.current?.abort();
     const controlador = new AbortController();
     abortRef.current = controlador;
@@ -121,7 +126,7 @@ export function useLista<T>(
       });
 
     return () => controlador.abort();
-  }, [recurso, filtrosChave, buscaAplicada, pagina, porPagina, ordem, gatilho]);
+  }, [recurso, filtrosChave, buscaAplicada, pagina, porPagina, ordem, gatilho, pausado]);
 
   const ordenarPor = useCallback((campo: string) => {
     setOrdem((atual) => alternarOrdem(atual, campo));

@@ -22,7 +22,7 @@ npm run banco:restaurar -- backup\dados-nps-AAAA-MM-DD.sql
 ```
 
 O `banco:restaurar` converte a estrutura e as migrations 13 (freio de login),
-20 (plano de ação) e 21 (evidência da ação) para o schema do `.env` em memória, carrega estrutura →
+20 (plano de ação), 21 (evidência da ação), 22 (exclusão pela direção) e 23 (link único por pessoa) para o schema do `.env` em memória, carrega estrutura →
 migrations → dados numa ordem que
 respeita as chaves estrangeiras e confere a contagem de cada tabela. Ele
 **recusa** rodar se o schema já tiver tabelas do NPS.

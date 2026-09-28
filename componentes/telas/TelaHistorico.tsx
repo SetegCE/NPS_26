@@ -19,7 +19,7 @@ import {
   FiltroSelect,
 } from "@/componentes/Tela";
 import { api, ErroApi } from "@/lib/cliente/api";
-import { auxiliares, useAuxiliar } from "@/lib/cliente/auxiliares";
+import { auxiliares, useAuxiliar, useCicloAtual } from "@/lib/cliente/auxiliares";
 import { formatarCompetencia, formatarData } from "@/lib/formato";
 import type { Sessao } from "@/lib/cliente/tipos";
 import { useLista } from "@/lib/cliente/useLista";
@@ -205,10 +205,11 @@ interface HistoricoCliente {
 
 function AbaCliente() {
   const clientes = useAuxiliar(auxiliares.clientes);
-  const ciclos = useAuxiliar(auxiliares.ciclos);
 
   const [cliente, setCliente] = useState("");
   const [ciclo, setCiclo] = useState("");
+  // A busca so sai depois de escolher o cliente, entao nao ha o que segurar.
+  const { ciclos } = useCicloAtual(setCiclo);
   const [dados, setDados] = useState<HistoricoCliente | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);

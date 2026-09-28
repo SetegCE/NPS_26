@@ -1810,7 +1810,18 @@ table.tabela-modulo th.td-acoes { text-align: left; }
 }
 .plano-tabela .evidencia-campo a:hover { background: var(--glass-bg-hover); }
 .plano-tabela td.evidencia.falta input { border-color: var(--red-text); background: rgba(239, 68, 68, 0.06); }
+/* Coluna da seta de salvar presa a direita: fica visivel mesmo com a tabela
+   rolada para o comeco (O que, Onde, Quanto...). */
+.plano-tabela td.acoes, .plano-tabela th.acoes {
+  position: sticky; right: 0; z-index: 1; background: var(--surface-2);
+  box-shadow: -6px 0 8px -6px rgba(0, 0, 0, 0.18);
+}
+.plano-tabela th.acoes { background: var(--surface-sunken); }
 .plano-tabela td.acoes { text-align: left; white-space: nowrap; padding: 2px 6px; }
+.plano-tabela td.acoes .btn-acoes + .btn-acoes { margin-left: 5px; }
+.btn-acoes.destaque { background: var(--blue-text, #2c5697); border-color: var(--blue-text, #2c5697); color: #fff; }
+.btn-acoes.destaque:hover { background: var(--blue-text, #2c5697); color: #fff; filter: brightness(1.1); }
+.btn-acoes:disabled { opacity: .45; cursor: default; transform: none; }
 .plano-tabela tbody tr:nth-child(even) td { background: transparent; }
 .plano-tabela tbody tr.alterada td:not(.status) { background: rgba(44, 86, 151, 0.07); }
 .plano-tabela tbody tr.nova td:not(.status) { background: var(--surface-2); }
@@ -1819,6 +1830,22 @@ table.tabela-modulo th.td-acoes { text-align: left; }
 /* ─── Aba Respostas: resumo do recorte e notas centralizadas ──────────── */
 .td-centro { text-align: center; }
 table.tabela-modulo th.td-centro { text-align: center; }
+
+/* Todas as tabelas: o conteudo de cada coluna centralizado sob o proprio
+   titulo (pedido da direcao). So no computador — no celular a tabela vira
+   cartao, com o rotulo a esquerda e o valor a direita. A coluna Acoes segue
+   a esquerda: o olho e sempre o primeiro botao e fica na mesma posicao em
+   todas as linhas, tenha a linha dois ou cinco botoes. */
+@media (min-width: 769px) {
+  table.tabela-modulo th,
+  table.tabela-modulo td,
+  .comparativo-table th, .comparativo-table td,
+  .incidencia-table th, .incidencia-table td,
+  .incidencia-comp-table th, .incidencia-comp-table td,
+  .lideres-admin-table th, .lideres-admin-table td { text-align: center; }
+  table.tabela-modulo th.td-acoes,
+  table.tabela-modulo td.td-acoes { text-align: left; }
+}
 .resumo-respostas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 0 0 14px; }
 .resumo-respostas > div {
   border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--glass-bg);
@@ -1894,3 +1921,7 @@ table.tabela-modulo th.td-centro { text-align: center; }
 .esqueleto-linha:first-child { height: 34px; opacity: .8; }
 @keyframes esqueleto-brilho { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .esqueleto > div, .esqueleto-filtros span, .esqueleto-linha { animation: none; } }
+
+/* Um link por pessoa no ciclo: aviso "Link único" / "Resposta única" sob o
+   nome do respondente (Pesquisas e Respostas). */
+.selo-link-unico { color: var(--blue-text); font-weight: 600; }

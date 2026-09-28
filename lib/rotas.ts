@@ -55,15 +55,17 @@ export const PREFIXOS_SO_PMO = [
   "/clientes",
   "/lideres",
   "/historico",
-  // As duas unicas rotas de API genuinamente exclusivas — nenhuma tem recorte
+  // As tres unicas rotas de API genuinamente exclusivas — nenhuma tem recorte
   // por lider a aplicar, entao nao ha o que a rota decida que o middleware nao
   // possa barrar antes:
   //
   //  - a trilha de auditoria: ver quem alterou o que e prerrogativa do PMO;
   //  - as contas de acesso: a lista traz e-mail, papel e ultimo acesso de todo
-  //    mundo, e ligar/desligar acesso e a chave da porta.
+  //    mundo, e ligar/desligar acesso e a chave da porta;
+  //  - a exclusao de registros (botao Excluir das tabelas): so a direcao.
   "/api/auditoria",
   "/api/usuarios",
+  "/api/excluir",
 ] as const;
 
 export const ehPublica = (pathname: string): boolean =>

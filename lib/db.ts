@@ -171,10 +171,20 @@ const MENSAGENS: Record<string, string> = {
   ACAO_NAO_ENCONTRADA: "Acao nao encontrada.",
   EVIDENCIA_OBRIGATORIA: "Para marcar a acao como feita, informe o link da evidencia.",
   EVIDENCIA_INVALIDA: "A evidencia deve ser um link que comece com http:// ou https://.",
+  RESPOSTA_NAO_ENCONTRADA: "Resposta nao encontrada.",
+  ISC_NAO_ENCONTRADO: "Nota ISC nao encontrada.",
+  CLIENTE_NAO_ENCONTRADO: "Cliente nao encontrado.",
+  CONTA_NAO_ENCONTRADA: "Conta de acesso nao encontrada.",
 };
+
+// Recusa de exclusao (nps_excluir, migration 22): o texto depois do prefixo ja
+// e a mensagem pronta para o usuario, com a contagem do que impede.
+const BLOQUEIO = "EXCLUSAO_BLOQUEADA:";
 
 function traduzirMensagem(codigo: string): string {
   if (!codigo) return "Falha na consulta ao banco.";
+  const bloqueio = codigo.indexOf(BLOQUEIO);
+  if (bloqueio >= 0) return codigo.slice(bloqueio + BLOQUEIO.length).trim();
   for (const chave of Object.keys(MENSAGENS)) {
     if (codigo.includes(chave)) return MENSAGENS[chave];
   }
@@ -185,6 +195,7 @@ function traduzirMensagem(codigo: string): string {
 }
 
 function traduzirStatus(status: number, codigo: string): number {
+  if (codigo.includes(BLOQUEIO)) return 409;
   if (codigo.includes("NAO_AUTORIZADO")) return 403;
   if (codigo.includes("NAO_ENCONTRAD")) return 404;
   if (status >= 500) return 502;

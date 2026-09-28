@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { CampoArea, CampoTexto, opcoesDe } from "@/componentes/Campo";
 import { ModalDetalhes } from "@/componentes/Detalhes";
+import { useExclusao } from "@/componentes/Excluir";
 import { Aviso, EstadoCarregando, EstadoErro, EstadoVazio } from "@/componentes/Estados";
 import { Modal } from "@/componentes/Modal";
 import { BotaoAcao, Tabela, type Coluna } from "@/componentes/Tabela";
@@ -28,6 +29,7 @@ interface ProjetoIsc {
 }
 
 interface RegistroIsc extends Record<string, unknown> {
+  id?: string;
   nota: number | string;
   observacao: string | null;
   created_at: string | null;
@@ -67,6 +69,7 @@ export function TelaIsc({ sessao }: { sessao: Sessao }) {
   const [historicoDe, setHistoricoDe] = useState<ProjetoIsc | null>(null);
   const [vendo, setVendo] = useState<Item | null>(null);
   const [comparativoAberto, setComparativoAberto] = useState(false);
+  const exclusao = useExclusao(() => carregar());
 
   const carregar = useCallback(() => {
     setErro(null);
@@ -146,6 +149,9 @@ export function TelaIsc({ sessao }: { sessao: Sessao }) {
             titulo="Histórico mensal do ISC"
             onClick={() => setHistoricoDe(l.projeto)}
           />
+          {ehPmo && l.isc?.id
+            ? exclusao.botao("isc", l.isc.id, `a nota ISC de ${l.projeto.codigo_clockify}`)
+            : null}
         </>
       ),
     },
@@ -315,6 +321,7 @@ export function TelaIsc({ sessao }: { sessao: Sessao }) {
           aoFechar={() => setComparativoAberto(false)}
         />
       ) : null}
+      {exclusao.modal}
     </>
   );
 }

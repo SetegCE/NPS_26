@@ -17,7 +17,7 @@
 
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { um } from "@/lib/db";
+import { rpc, um } from "@/lib/db";
 import { FormularioPesquisa, MensagemFinal } from "./FormularioPesquisa";
 import "./pesquisa.css";
 
@@ -101,8 +101,16 @@ export default async function PaginaPesquisa({ params }: { params: { token: stri
   }
 
   let pesquisa: Pesquisa | null = null;
+  let projetos: string[] = [];
   try {
-    pesquisa = await um<Pesquisa>("vw_pesquisas", { token });
+    // As duas consultas saem juntas: projetos do link (um link por pessoa no
+    // ciclo pode cobrir mais de um projeto — migration 23).
+    const [p, doLink] = await Promise.all([
+      um<Pesquisa>("vw_pesquisas", { token }),
+      rpc<{ projeto: string }[]>("nps_projetos_do_link", { p_token: token }),
+    ]);
+    pesquisa = p;
+    projetos = (doLink || []).map((x) => x.projeto);
   } catch (e) {
     console.error("[NPS][pesquisa] falha ao carregar o contexto:", e);
     return (
@@ -158,7 +166,7 @@ export default async function PaginaPesquisa({ params }: { params: { token: stri
     <Pagina>
       <FormularioPesquisa
         token={token}
-        contexto={{ respondente: pesquisa.respondente_nome || "" }}
+        contexto={{ respondente: pesquisa.respondente_nome || "", projetos }}
       />
     </Pagina>
   );

@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CampoSelect, CampoTexto } from "@/componentes/Campo";
 import { ModalDetalhes } from "@/componentes/Detalhes";
+import { useExclusao } from "@/componentes/Excluir";
 import { Aviso, EstadoCarregando, EstadoErro, EstadoVazio } from "@/componentes/Estados";
 import { type AcaoModal, Confirmacao, Modal } from "@/componentes/Modal";
 import { BotaoAcao, Tabela, type Coluna } from "@/componentes/Tabela";
@@ -62,6 +63,7 @@ export function TelaCiclos() {
     status: "aberto" | "encerrado";
   } | null>(null);
   const [salvandoStatus, setSalvandoStatus] = useState(false);
+  const exclusao = useExclusao(() => carregar());
 
   const carregar = useCallback(() => {
     setErro(null);
@@ -165,6 +167,7 @@ export function TelaCiclos() {
               onClick={() => setMudandoStatus({ ciclo: l, status: "encerrado" })}
             />
           ) : null}
+          {exclusao.botao("ciclo", l.id, `o ciclo ${l.codigo}`)}
         </>
       ),
     },
@@ -291,6 +294,7 @@ export function TelaCiclos() {
           aoCancelar={() => setMudandoStatus(null)}
         />
       ) : null}
+      {exclusao.modal}
     </>
   );
 }

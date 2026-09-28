@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CampoSelect, CampoTexto, opcoesDe } from "@/componentes/Campo";
 import { ModalDetalhes } from "@/componentes/Detalhes";
+import { useExclusao } from "@/componentes/Excluir";
 import { Aviso, EstadoCarregando, EstadoErro, EstadoVazio } from "@/componentes/Estados";
 import { Modal } from "@/componentes/Modal";
 import { BotaoAcao, type Coluna } from "@/componentes/Tabela";
@@ -58,6 +59,7 @@ export function TelaRespondentes({ sessao }: { sessao: Sessao }) {
     ordemInicial: { campo: "nome", ascending: true },
     filtros,
   });
+  const exclusao = useExclusao(() => lista.recarregar());
 
   const colunas: Coluna<Respondente>[] = [
     {
@@ -95,6 +97,7 @@ export function TelaRespondentes({ sessao }: { sessao: Sessao }) {
               titulo="Projetos vinculados"
               onClick={() => setVinculosDe(l)}
             />
+            {exclusao.botao("respondente", l.id, `o respondente ${l.nome}`)}
           </>
         ) : null}
       </>
@@ -177,6 +180,7 @@ export function TelaRespondentes({ sessao }: { sessao: Sessao }) {
       {vinculosDe ? (
         <Vinculos respondente={vinculosDe} aoFechar={() => setVinculosDe(null)} />
       ) : null}
+      {exclusao.modal}
     </>
   );
 }

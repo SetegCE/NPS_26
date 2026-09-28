@@ -14,7 +14,7 @@ import {
   FiltroSelect,
 } from "@/componentes/Tela";
 import { api } from "@/lib/cliente/api";
-import { auxiliares, cicloAberto, useAuxiliar } from "@/lib/cliente/auxiliares";
+import { auxiliares, useAuxiliar, useCicloAtual } from "@/lib/cliente/auxiliares";
 import type { Sessao } from "@/lib/cliente/tipos";
 import { useLista } from "@/lib/cliente/useLista";
 
@@ -73,31 +73,25 @@ export function TelaOperacao({ sessao }: { sessao: Sessao }) {
   const ehPmo = sessao.perfil === "pmo";
   const clientes = useAuxiliar(auxiliares.clientes);
   const lideres = useAuxiliar(auxiliares.lideres);
-  const ciclos = useAuxiliar(auxiliares.ciclos);
 
   const [f, setF] = useState(VAZIO);
   const [indicadores, setIndicadores] = useState<Indicadores | null>(null);
 
   // O ciclo aberto e o recorte padrao: e nele que o trabalho esta acontecendo.
-  // Roda uma vez, quando a lista de ciclos chega.
-  const [cicloInicializado, setCicloInicializado] = useState(false);
-  useEffect(() => {
-    if (cicloInicializado || !ciclos.length) return;
-    const aberto = cicloAberto(ciclos);
-    if (aberto) setF((atual) => ({ ...atual, ciclo: aberto.id }));
-    setCicloInicializado(true);
-  }, [ciclos, cicloInicializado]);
+  const { ciclos, pronto } = useCicloAtual((id) => setF((atual) => ({ ...atual, ciclo: id })));
 
   const filtros = useMemo(() => ({ ...f, lider: ehPmo ? f.lider : "" }), [f, ehPmo]);
 
   const lista = useLista<LinhaOperacao>("operacao", {
     ordemInicial: { campo: "projeto_nome", ascending: true },
     filtros,
+    pausado: !pronto,
   });
 
   // Os indicadores acompanham os mesmos filtros da tabela. Falhar aqui apaga
   // os cartoes e so — a tabela continua.
   useEffect(() => {
+    if (!pronto) return;
     let ativo = true;
     api
       .get<Indicadores>("operacao/indicadores", filtros)
@@ -110,7 +104,7 @@ export function TelaOperacao({ sessao }: { sessao: Sessao }) {
     return () => {
       ativo = false;
     };
-  }, [filtros]);
+  }, [filtros, pronto]);
 
   const mudar = (campo: keyof typeof VAZIO, valor: string) =>
     setF((atual) => ({ ...atual, [campo]: valor }));

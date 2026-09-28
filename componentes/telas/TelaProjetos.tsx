@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CampoArea, CampoSelect, CampoTexto, opcoesDe } from "@/componentes/Campo";
 import { Aviso } from "@/componentes/Estados";
+import { useExclusao } from "@/componentes/Excluir";
 import { Modal } from "@/componentes/Modal";
 import { BotaoAcao, type Coluna } from "@/componentes/Tabela";
 import {
@@ -26,7 +27,7 @@ import {
 } from "@/componentes/Tela";
 import { useToast } from "@/componentes/Toast";
 import { api, ErroApi } from "@/lib/cliente/api";
-import { auxiliares, useAuxiliar } from "@/lib/cliente/auxiliares";
+import { auxiliares, useAuxiliar, useCicloAtual } from "@/lib/cliente/auxiliares";
 import type { Sessao } from "@/lib/cliente/tipos";
 import { useLista } from "@/lib/cliente/useLista";
 
@@ -84,7 +85,7 @@ export function TelaProjetos({
   const toast = useToast();
   const clientes = useAuxiliar(auxiliares.clientes);
   const lideres = useAuxiliar(auxiliares.lideres);
-  const ciclos = useAuxiliar(auxiliares.ciclos);
+  const { ciclos, pronto } = useCicloAtual((id) => setF((atual) => ({ ...atual, ciclo: id })));
 
   const [f, setF] = useState(VAZIO);
   const [editando, setEditando] = useState<Projeto | null>(null);
@@ -95,7 +96,9 @@ export function TelaProjetos({
   const lista = useLista<Projeto>("projetos", {
     ordemInicial: { campo: "nome", ascending: true },
     filtros,
+    pausado: !pronto,
   });
+  const exclusao = useExclusao(() => lista.recarregar());
 
   const mudar = (campo: keyof typeof VAZIO, valor: string) =>
     setF((atual) => ({ ...atual, [campo]: valor }));
@@ -165,6 +168,7 @@ export function TelaProjetos({
                 titulo="Alterar líder responsável"
                 onClick={() => setTrocandoLider(l)}
               />
+              {exclusao.botao("projeto", l.id, `o projeto ${l.codigo_clockify} — ${l.nome}`)}
             </>
           ) : null}
         </>
@@ -301,6 +305,7 @@ export function TelaProjetos({
           }}
         />
       ) : null}
+      {exclusao.modal}
     </>
   );
 }

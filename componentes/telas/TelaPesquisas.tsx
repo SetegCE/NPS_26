@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CampoSelect } from "@/componentes/Campo";
 import { GradeDetalhes } from "@/componentes/Detalhes";
+import { useExclusao } from "@/componentes/Excluir";
 import { Aviso } from "@/componentes/Estados";
 import { Modal } from "@/componentes/Modal";
 import { BotaoAcao, type Coluna } from "@/componentes/Tabela";
@@ -18,7 +19,7 @@ import {
 } from "@/componentes/Tela";
 import { useToast } from "@/componentes/Toast";
 import { api, ErroApi, type Pagina } from "@/lib/cliente/api";
-import { auxiliares, cicloAberto, useAuxiliar } from "@/lib/cliente/auxiliares";
+import { auxiliares, cicloAberto, useAuxiliar, useCicloAtual } from "@/lib/cliente/auxiliares";
 import { copiarTexto } from "@/lib/cliente/copiar";
 import { categoriaDaNota, formatarData, rotuloDoCanal } from "@/lib/formato";
 import type { Sessao } from "@/lib/cliente/tipos";
@@ -37,6 +38,20 @@ export interface Pesquisa extends Record<string, unknown> {
   data_geracao: string | null;
   data_envio: string | null;
   data_resposta: string | null;
+  /** Projetos cobertos pelo link desta pesquisa (1 = link só dela). */
+  link_projetos?: number | null;
+  /** Respondida numa resposta única para vários projetos: quais. */
+  resposta_grupo_projetos?: string | null;
+}
+
+/** Um link por pessoa no ciclo: o que a linha diz sobre isso, ou null. */
+function avisoDoLink(l: Pesquisa): string | null {
+  if (l.resposta_grupo_projetos) {
+    const n = l.resposta_grupo_projetos.split("; ").length;
+    return `Resposta única · vale para ${n} projetos`;
+  }
+  if (Number(l.link_projetos) > 1) return `Link único · ${l.link_projetos} projetos`;
+  return null;
 }
 
 const TIPOS = [
@@ -74,9 +89,9 @@ const VAZIO = { ciclo: "", tipo: "", status: "" };
 export function TelaPesquisas({ sessao }: { sessao: Sessao }) {
   const ehPmo = sessao.perfil === "pmo";
   const toast = useToast();
-  const ciclos = useAuxiliar(auxiliares.ciclos);
 
   const [f, setF] = useState(VAZIO);
+  const { ciclos, pronto } = useCicloAtual((id) => setF((atual) => ({ ...atual, ciclo: id })));
   // "escolha" abre o seletor Ciclo/Finalizacao; "finalizacao" abre o
   // formulario individual. O ciclo nao tem formulario: gera em lote direto.
   const [gerando, setGerando] = useState<null | "escolha" | "finalizacao">(null);
@@ -92,15 +107,23 @@ export function TelaPesquisas({ sessao }: { sessao: Sessao }) {
   const lista = useLista<Pesquisa>("pesquisas", {
     ordemInicial: { campo: "data_geracao", ascending: false },
     filtros,
+    pausado: !pronto,
   });
+  const exclusao = useExclusao(() => lista.recarregar());
 
   /** Busca o link sob demanda: o token nunca vem na listagem. */
-  async function copiarLink(id: string) {
-    setCopiandoId(id);
+  async function copiarLink(l: Pesquisa) {
+    setCopiandoId(l.id);
     try {
-      const { link } = await api.get<{ link: string }>(`pesquisas/${id}/link`);
+      const { link } = await api.get<{ link: string }>(`pesquisas/${l.id}/link`);
       await copiarTexto(link);
-      toast("Link copiado para a área de transferência.", "sucesso");
+      toast(
+        Number(l.link_projetos) > 1
+          ? `Link copiado. É o mesmo link para os ${l.link_projetos} projetos de ${l.respondente_nome}: uma resposta vale para todos.`
+          : "Link copiado para a área de transferência.",
+        "sucesso",
+        Number(l.link_projetos) > 1 ? 7000 : undefined
+      );
     } catch (e) {
       toast(e instanceof ErroApi ? e.message : "Não foi possível copiar o link.", "erro");
     } finally {
@@ -122,7 +145,24 @@ export function TelaPesquisas({ sessao }: { sessao: Sessao }) {
         </>
       ),
     },
-    { chave: "respondente_nome", rotulo: "Respondente", ordenavel: true },
+    {
+      chave: "respondente_nome",
+      rotulo: "Respondente",
+      ordenavel: true,
+      render: (l) => {
+        const aviso = avisoDoLink(l);
+        return (
+          <>
+            {l.respondente_nome}
+            {aviso ? (
+              <span className="td-sub selo-link-unico" style={{ display: "block" }} title={l.resposta_grupo_projetos || undefined}>
+                {aviso}
+              </span>
+            ) : null}
+          </>
+        );
+      },
+    },
     {
       chave: "tipo",
       rotulo: "Tipo",
@@ -156,7 +196,7 @@ export function TelaPesquisas({ sessao }: { sessao: Sessao }) {
           <BotaoAcao
             icone="link"
             titulo="Copiar link da pesquisa"
-            onClick={() => copiarLink(l.id)}
+            onClick={() => copiarLink(l)}
             desabilitado={copiandoId === l.id}
           />
           {ehPmo && l.status !== "respondida" ? (
@@ -166,6 +206,7 @@ export function TelaPesquisas({ sessao }: { sessao: Sessao }) {
               onClick={() => setAlterandoStatus(l)}
             />
           ) : null}
+          {ehPmo ? exclusao.botao("pesquisa", l.id, `a pesquisa de ${l.respondente_nome} (${l.codigo_clockify})`) : null}
         </>
       ),
     },
@@ -290,6 +331,7 @@ export function TelaPesquisas({ sessao }: { sessao: Sessao }) {
           }}
         />
       ) : null}
+      {exclusao.modal}
     </>
   );
 }
@@ -822,6 +864,11 @@ function VerResposta({ pesquisa, aoFechar }: { pesquisa: Pesquisa; aoFechar: () 
           { rotulo: "Situação", valor: <SeloStatusPesquisa status={pesquisa.status} /> },
           { rotulo: "Gerada em", valor: formatarData(pesquisa.data_geracao, true) },
           { rotulo: "Respondida em", valor: formatarData(pesquisa.data_resposta, true) },
+          ...(pesquisa.resposta_grupo_projetos
+            ? [{ rotulo: "Resposta única para os projetos", valor: pesquisa.resposta_grupo_projetos }]
+            : Number(pesquisa.link_projetos) > 1
+              ? [{ rotulo: "Link único", valor: `Mesmo link para ${pesquisa.link_projetos} projetos desta pessoa no ciclo` }]
+              : []),
         ]}
       />
 

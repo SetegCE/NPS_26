@@ -2,9 +2,13 @@
 //
 // Existe separado da listagem justamente para que o token nao viaje em toda
 // consulta: quem tem o token responde a pesquisa no lugar do cliente.
+//
+// Um link por pessoa no ciclo (migration 23): se a pessoa responde por mais
+// de um projeto, todos devolvem o MESMO link (nps_token_do_link), e uma
+// resposta vale para todos eles.
 
 import { erro, json, rotaApi, uuid } from "@/lib/http";
-import { um } from "@/lib/db";
+import { rpc, um } from "@/lib/db";
 import { montarLinkDaPesquisa } from "@/lib/link";
 import { exigirSessao, PERFIL_LIDER } from "@/lib/session";
 
@@ -30,6 +34,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     }
     if (!pesquisa.ativo) throw erro(400, "PESQUISA_ENCERRADA", "Esta pesquisa foi encerrada.");
 
-    return json({ link: montarLinkDaPesquisa(req, pesquisa.token) });
+    const token = (await rpc<string | null>("nps_token_do_link", { p_pesquisa_id: id })) || pesquisa.token;
+    return json({ link: montarLinkDaPesquisa(req, token) });
   });
 }

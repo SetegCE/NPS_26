@@ -9,6 +9,7 @@
 // tudo por construcao e essa classe inteira de problema desaparece.
 
 import { useState } from "react";
+import { useExclusao } from "@/componentes/Excluir";
 import { formatarData } from "@/lib/formato";
 import type { Categoria, Resposta } from "@/lib/dashboard";
 
@@ -103,6 +104,13 @@ function ModalDetalhes({ r, aoFechar }: { r: Resposta; aoFechar: () => void }) {
             </div>
           </div>
 
+          {r.grupo_projetos ? (
+            <div className="detalhes-feedback">
+              <div className="detalhes-label">Resposta única para os projetos</div>
+              <div className="detalhes-value">{r.grupo_projetos}</div>
+            </div>
+          ) : null}
+
           <div className="detalhes-feedback">
             <div className="detalhes-label">Feedback Completo</div>
             <div className="detalhes-value">{r.feedback || "Sem feedback registrado"}</div>
@@ -123,8 +131,19 @@ function ModalDetalhes({ r, aoFechar }: { r: Resposta; aoFechar: () => void }) {
   );
 }
 
-export function TabelaRespostas({ dados }: { dados: Resposta[] }) {
+export function TabelaRespostas({
+  dados,
+  ehPmo = false,
+  aoExcluir,
+}: {
+  dados: Resposta[];
+  /** Direção (PMO): mostra o botão de excluir resposta. */
+  ehPmo?: boolean;
+  /** Tira a resposta excluída da lista já carregada, sem refazer a consulta. */
+  aoExcluir?: (id: string) => void;
+}) {
   const [pagina, setPagina] = useState(1);
+  const exclusao = useExclusao((id) => aoExcluir?.(id));
   const [porPagina, setPorPagina] = useState(10);
   const [detalhe, setDetalhe] = useState<Resposta | null>(null);
 
@@ -194,6 +213,9 @@ export function TabelaRespostas({ dados }: { dados: Resposta[] }) {
                         <circle cx="12" cy="12" r="3" />
                       </svg>
                     </button>
+                    {ehPmo
+                      ? exclusao.botao("resposta", String(r.id), `a resposta de ${r.identificador} (${r.projeto || "—"})`)
+                      : null}
                   </td>
                 </tr>
               ))
@@ -290,6 +312,7 @@ export function TabelaRespostas({ dados }: { dados: Resposta[] }) {
       </div>
 
       {detalhe ? <ModalDetalhes r={detalhe} aoFechar={() => setDetalhe(null)} /> : null}
+      {exclusao.modal}
     </>
   );
 }

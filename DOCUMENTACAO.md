@@ -153,7 +153,7 @@ O `codigo_clockify` é o **identificador oficial** de cada projeto. Ele é a cha
 
 ## 3. Banco de Dados — Supabase
 
-**URL:** `https://acpugxkikuzbvtjwxups.supabase.co`
+**Projeto:** `NPS_2026_SP` (região sa-east-1, São Paulo) — `https://zvuiqrfdlmtekionpxpt.supabase.co`. O sistema conecta direto no Postgres pela `DATABASE_URL` (Session pooler). O projeto anterior (`NPS_2026`, us-west-2) foi pausado em 26/09/2026.
 
 ### 3.1 Tabela `respostas_nps`
 

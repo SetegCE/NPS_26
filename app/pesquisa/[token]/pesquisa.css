@@ -85,6 +85,10 @@
 .pq-cabecalho { align-self: flex-start; width: 100%; margin-bottom: 4px; }
 .pq-saudacao { font-size: 1.25rem; font-weight: 600; margin-bottom: 6px; color: var(--pq-marinho); }
 .pq-intro { font-size: 1.08rem; line-height: 1.55; color: var(--pq-texto-suave); }
+.pq-projetos {
+  margin-top: 10px; font-size: 0.95rem; line-height: 1.5; color: var(--pq-texto-suave);
+}
+.pq-projetos strong { color: inherit; font-weight: 700; }
 
 .pq-form { width: 100%; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
 

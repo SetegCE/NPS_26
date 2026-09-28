@@ -28,6 +28,14 @@ type Campo = (typeof PERGUNTAS)[number]["campo"];
 
 export interface Contexto {
   respondente: string;
+  /** Projetos que este link cobre. Com mais de um, a mesma avaliação vale
+   *  para todos (um link por pessoa no ciclo — migration 23). */
+  projetos?: string[];
+}
+
+/** ["A", "B", "C"] → "A, B e C". */
+function listar(itens: string[]): string {
+  return itens.length > 1 ? `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}` : itens[0] || "";
 }
 
 /** "RAFAELLA ARAÚJO" ou "rafaella araújo" → "Rafaella Araújo", como no modelo. */
@@ -130,6 +138,12 @@ export function FormularioPesquisa({
         <p className="pq-intro">
           Sua opinião é essencial para aprimorarmos continuamente nosso atendimento e serviços.
         </p>
+        {contexto.projetos && contexto.projetos.length > 1 ? (
+          <p className="pq-projetos">
+            Esta avaliação vale para os projetos <strong>{listar(contexto.projetos)}</strong>. Responda
+            uma única vez.
+          </p>
+        ) : null}
       </div>
 
       <form className="pq-form" onSubmit={enviar} noValidate>

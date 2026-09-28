@@ -84,3 +84,40 @@ export function useAuxiliar<T>(carregador: () => Promise<T[]>): T[] {
 export function cicloAberto(ciclos: Ciclo[]): Ciclo | null {
   return ciclos.find((c) => c.status === "aberto") || ciclos[0] || null;
 }
+
+/**
+ * Lista de ciclos + o ciclo atual como recorte INICIAL da tela.
+ *
+ * Toda aba abre no ciclo atual (o aberto; sem aberto, o mais recente) e a
+ * pessoa troca para "Todos" se quiser. `aplicar` recebe o id uma vez, quando
+ * a lista chega; `pronto` diz que o recorte ja foi decidido — a tela segura a
+ * primeira consulta ate la (useLista `pausado`), senao carregaria tudo, e so
+ * depois o ciclo, piscando a tabela.
+ */
+export function useCicloAtual(aplicar: (cicloId: string) => void): { ciclos: Ciclo[]; pronto: boolean } {
+  const [ciclos, setCiclos] = useState<Ciclo[]>([]);
+  const [pronto, setPronto] = useState(false);
+
+  useEffect(() => {
+    let ativo = true;
+    auxiliares
+      .ciclos()
+      .then((l) => {
+        if (!ativo) return;
+        setCiclos(l);
+        const atual = cicloAberto(l);
+        if (atual) aplicar(atual.id);
+        setPronto(true);
+      })
+      .catch(() => {
+        // Sem a lista, abre em "Todos": melhor do que a tela parada.
+        if (ativo) setPronto(true);
+      });
+    return () => {
+      ativo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return { ciclos, pronto };
+}

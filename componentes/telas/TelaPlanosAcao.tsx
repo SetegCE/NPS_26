@@ -10,13 +10,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Aviso, EstadoCarregando, EstadoErro } from "@/componentes/Estados";
+import { useExclusao } from "@/componentes/Excluir";
 import { Confirmacao, Modal } from "@/componentes/Modal";
 import { usePaginacaoLocal } from "@/componentes/Paginacao";
 import { BotaoAcao, Tabela, type Coluna } from "@/componentes/Tabela";
 import { BarraFiltros, CabecalhoTela, FiltroSelect, Selo } from "@/componentes/Tela";
 import { useToast } from "@/componentes/Toast";
 import { api, ErroApi } from "@/lib/cliente/api";
-import { auxiliares, useAuxiliar } from "@/lib/cliente/auxiliares";
+import { useCicloAtual } from "@/lib/cliente/auxiliares";
 import { formatarData } from "@/lib/formato";
 import type { Sessao } from "@/lib/cliente/tipos";
 
@@ -108,6 +109,18 @@ const reais = (v: number | null) =>
     ? "—"
     : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+/** Alvo da decisao do PMO a partir de um plano ja registrado. */
+const alvoDoPlano = (l: Plano): AlvoDecisao => ({
+  projeto_id: l.projeto_id,
+  ciclo_id: l.ciclo_id,
+  ciclo: l.ciclo_codigo,
+  projeto: l.projeto_nome,
+  codigo: l.codigo_clockify,
+  cliente: l.cliente_nome,
+  lider: l.lider_nome || l.responsavel_nome,
+  atual: l,
+});
+
 function SeloPlano({ situacao }: { situacao: string }) {
   const s = SITUACAO_PLANO[situacao] || { rotulo: situacao, tom: "neutro" as const };
   return <Selo tom={s.tom}>{s.rotulo}</Selo>;
@@ -117,16 +130,18 @@ function SeloPlano({ situacao }: { situacao: string }) {
 
 export function TelaPlanosAcao({ sessao }: { sessao: Sessao }) {
   const ehPmo = sessao.perfil === "pmo";
-  const ciclos = useAuxiliar(auxiliares.ciclos);
 
   const [ciclo, setCiclo] = useState("");
+  const { ciclos, pronto } = useCicloAtual(setCiclo);
   const [situacao, setSituacao] = useState("");
   const [dados, setDados] = useState<{ itens: Plano[]; pendentes: Pendente[] } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [decidindo, setDecidindo] = useState<AlvoDecisao | null>(null);
-  const [abertoId, setAbertoId] = useState<string | null>(null);
+  // Olho abre so para consulta; lapis abre para editar.
+  const [aberto, setAberto] = useState<{ id: string; editar: boolean } | null>(null);
 
   const carregar = useCallback(() => {
+    if (!pronto) return;
     setErro(null);
     api
       .get<{ itens: Plano[]; pendentes: Pendente[] }>("planos-acao", { ciclo, situacao })
@@ -135,9 +150,10 @@ export function TelaPlanosAcao({ sessao }: { sessao: Sessao }) {
         setDados(null);
         setErro(e instanceof ErroApi ? e.message : "Falha ao carregar os planos de ação.");
       });
-  }, [ciclo, situacao]);
+  }, [ciclo, situacao, pronto]);
 
   useEffect(carregar, [carregar]);
+  const exclusao = useExclusao(() => carregar());
 
   const colunasPendentes: Coluna<Pendente>[] = [
     {
@@ -226,26 +242,20 @@ export function TelaPlanosAcao({ sessao }: { sessao: Sessao }) {
       render: (l) => (
         <>
           {l.passivel ? (
-            <BotaoAcao icone="ver" titulo="Ver e preencher o plano" onClick={() => setAbertoId(l.id)} />
+            <BotaoAcao icone="ver" titulo="Ver o plano" onClick={() => setAberto({ id: l.id, editar: false })} />
           ) : null}
-          {ehPmo ? (
-            <BotaoAcao
-              icone="editar"
-              titulo="Alterar decisão / contexto"
-              onClick={() =>
-                setDecidindo({
-                  projeto_id: l.projeto_id,
-                  ciclo_id: l.ciclo_id,
-                  ciclo: l.ciclo_codigo,
-                  projeto: l.projeto_nome,
-                  codigo: l.codigo_clockify,
-                  cliente: l.cliente_nome,
-                  lider: l.lider_nome || l.responsavel_nome,
-                  atual: l,
-                })
-              }
-            />
+          {l.passivel ? (
+            <BotaoAcao icone="editar" titulo="Editar o plano" onClick={() => setAberto({ id: l.id, editar: true })} />
+          ) : ehPmo ? (
+            <BotaoAcao icone="editar" titulo="Alterar decisão" onClick={() => setDecidindo(alvoDoPlano(l))} />
           ) : null}
+          {ehPmo
+            ? exclusao.botao(
+                "plano",
+                l.id,
+                l.passivel ? `o plano de ação ${l.numero} (${l.codigo_clockify})` : `a decisão de ${l.codigo_clockify} no ciclo ${l.ciclo_codigo}`
+              )
+            : null}
         </>
       ),
     },
@@ -336,19 +346,26 @@ export function TelaPlanosAcao({ sessao }: { sessao: Sessao }) {
             setDecidindo(null);
             carregar();
             // "Sim": abre o plano ja no formato da planilha, pronto para as acoes.
-            if (planoCriado) setAbertoId(planoCriado);
+            if (planoCriado) setAberto({ id: planoCriado, editar: true });
           }}
         />
       ) : null}
 
-      {abertoId ? (
+      {aberto ? (
         <ModalPlano
-          planoId={abertoId}
+          key={`${aberto.id}|${aberto.editar}`}
+          planoId={aberto.id}
           ehPmo={ehPmo}
-          aoFechar={() => setAbertoId(null)}
+          somenteLeitura={!aberto.editar}
+          aoFechar={() => setAberto(null)}
           aoAlterar={carregar}
+          aoAlterarDecisao={(p) => {
+            setAberto(null);
+            setDecidindo(alvoDoPlano(p));
+          }}
         />
       ) : null}
+      {exclusao.modal}
     </>
   );
 }
@@ -538,13 +555,18 @@ const iguais = (a: Rascunho, b: Rascunho) =>
 function ModalPlano({
   planoId,
   ehPmo,
+  somenteLeitura,
   aoFechar,
   aoAlterar,
+  aoAlterarDecisao,
 }: {
   planoId: string;
   ehPmo: boolean;
+  /** Olho: so consulta. Lapis: edita. */
+  somenteLeitura: boolean;
   aoFechar: () => void;
   aoAlterar: () => void;
+  aoAlterarDecisao: (plano: Plano) => void;
 }) {
   const toast = useToast();
   const [dados, setDados] = useState<{ plano: Plano; acoes: Acao[] } | null>(null);
@@ -569,6 +591,7 @@ function ModalPlano({
 
   const plano = dados?.plano;
   const aberto = plano ? !plano.encerrado_em : false;
+  const editavel = aberto && !somenteLeitura;
   const paginaAcoes = usePaginacaoLocal(dados?.acoes || []);
 
   const recarregarTudo = () => {
@@ -674,8 +697,17 @@ function ModalPlano({
   };
 
   const acoesModal = [
-    ...(ehPmo && plano
+    ...(ehPmo && plano && !somenteLeitura
       ? [
+          {
+            rotulo: "Alterar decisão",
+            classe: "btn-secondary",
+            onClick: () => {
+              if (alteradas && !window.confirm(`Há ${alteradas} linha(s) alterada(s) sem salvar. Continuar mesmo assim?`)) return;
+              aoAlterarDecisao(plano);
+            },
+            desabilitado: ocupado,
+          },
           {
             rotulo: aberto ? "Encerrar plano" : "Reabrir plano",
             classe: "btn-secondary",
@@ -702,7 +734,7 @@ function ModalPlano({
       <input
         aria-label={rotulo}
         value={r[nome]}
-        disabled={!aberto}
+        disabled={!editavel}
         onChange={(e) => mudarCampo(nome, e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") aoEnter();
@@ -729,7 +761,7 @@ function ModalPlano({
             aria-label="Ação feita"
             title={r.situacao === "concluido" ? "Feita" : "Marcar como feita (exige o link da evidência)"}
             checked={r.situacao === "concluido"}
-            disabled={!aberto}
+            disabled={!editavel}
             onChange={(e) => mudarCampo("situacao", e.target.checked ? "concluido" : "no_prazo")}
           />
         </td>
@@ -786,7 +818,7 @@ function ModalPlano({
                 <tr>
                   <th>Assunto</th>
                   <td colSpan={3}>
-                    {ehPmo && aberto ? (
+                    {ehPmo && editavel ? (
                       <input
                         aria-label="Assunto"
                         value={cabecalho?.assunto ?? plano.assunto ?? ""}
@@ -808,7 +840,7 @@ function ModalPlano({
                 <tr>
                   <th>Objetivo</th>
                   <td colSpan={3}>
-                    {ehPmo && aberto ? (
+                    {ehPmo && editavel ? (
                       <textarea
                         aria-label="Objetivo"
                         rows={2}
@@ -855,9 +887,9 @@ function ModalPlano({
               style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "18px 0 8px" }}
             >
               <strong style={{ fontSize: ".92rem" }}>Ações ({dados?.acoes.length || 0})</strong>
-              {aberto ? (
+              {editavel ? (
                 <span className="td-sub">
-                  Edite direto nas células e salve a linha no ✓ (ou Enter). Ao marcar Feito, cole o link da evidência.
+                  Edite direto nas células e salve a linha na seta → (ou Enter). Ao marcar Feito, cole o link da evidência.
                 </span>
               ) : null}
             </div>
@@ -879,7 +911,7 @@ function ModalPlano({
                     <th style={{ minWidth: 110 }}>Situação</th>
                     <th style={{ minWidth: 190 }}>Evidência (link)</th>
                     <th style={{ minWidth: 150 }}>Observação</th>
-                    {aberto ? <th style={{ width: 84 }} /> : null}
+                    {editavel ? <th className="acoes" style={{ width: 84 }}>Salvar</th> : null}
                   </tr>
                 </thead>
                 <tbody>
@@ -897,13 +929,14 @@ function ModalPlano({
                           },
                           a.concluido_em
                         )}
-                        {aberto ? (
+                        {editavel ? (
                           <td className="acoes">
                             <BotaoAcao
-                              icone="check"
+                              icone="salvar"
                               titulo={alterada ? "Salvar alterações da linha" : "Sem alterações"}
                               onClick={() => salvarLinha(a.id, r)}
                               desabilitado={!alterada || salvandoId === a.id}
+                              destaque={alterada}
                             />
                             <BotaoAcao icone="inativar" titulo="Remover ação" perigo onClick={() => setRemovendo(a)} />
                           </td>
@@ -912,7 +945,7 @@ function ModalPlano({
                     );
                   })}
 
-                  {aberto ? (
+                  {editavel ? (
                     <tr className="nova">
                       <td className="item">+</td>
                       {celulas(
@@ -922,10 +955,11 @@ function ModalPlano({
                       )}
                       <td className="acoes">
                         <BotaoAcao
-                          icone="adicionar"
-                          titulo="Adicionar ação"
+                          icone="salvar"
+                          titulo={nova.o_que.trim() ? "Salvar ação" : 'Preencha "O que fazer?" para salvar'}
                           onClick={() => salvarLinha(null, nova)}
                           desabilitado={!nova.o_que.trim() || salvandoId === "nova"}
+                          destaque={Boolean(nova.o_que.trim())}
                         />
                       </td>
                     </tr>
