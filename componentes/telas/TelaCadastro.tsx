@@ -5,15 +5,15 @@
 //
 // Em "lideres", e so para o PMO, a tela ganha a gestao de acessos, no mesmo
 // desenho da tela de acessos do SGA: a coluna "Acesso ao sistema", a direcao
-// listada como ADMIN, e os botoes de criar conta, redefinir senha e
-// desativar/reativar a CONTA (usuarios_nps, via lib/acessos.ts).
+// listada como ADMIN, e os botoes de criar conta, editar o acesso (tipo e
+// senha) e desativar/reativar a CONTA (usuarios_nps, via lib/acessos.ts).
 //
 // Fica aqui, e nao numa tela propria, porque a pergunta que leva ate ela —
 // "fulano ainda entra?" — se faz olhando a lista de lideres, nao um cadastro
 // de contas a parte.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CampoTexto } from "@/componentes/Campo";
+import { CampoSelect, CampoTexto } from "@/componentes/Campo";
 import { GradeDetalhes } from "@/componentes/Detalhes";
 import { useExclusao } from "@/componentes/Excluir";
 import { Confirmacao, Modal } from "@/componentes/Modal";
@@ -329,7 +329,7 @@ export function TelaCadastro({
                 titulo={
                   ehEu
                     ? "Redefinir a sua senha (a sessão cai)"
-                    : `Redefinir a senha de ${l.nome}`
+                    : `Editar o acesso de ${l.nome} (tipo e senha)`
                 }
                 onClick={() => setMexendoNaSenha({ linha: l, conta })}
               />
@@ -558,12 +558,21 @@ function Formulario({
   );
 }
 
-// ─── Conta de acesso: criar e redefinir senha ──────────────────────────────
+// ─── Conta de acesso: criar e editar (tipo e senha) ────────────────────────
+
+const OPCOES_PAPEL = [
+  { valor: "lider", rotulo: "Colaborador — vê só os próprios projetos" },
+  { valor: "pmo", rotulo: "Administrador (direção) — acesso total" },
+];
 
 /**
- * O mesmo modal serve para os dois casos, porque a decisão é a mesma: qual
- * senha esta pessoa vai usar. Criar pede o e-mail junto; redefinir não pede,
- * porque o e-mail é a identidade da conta e não muda (ver lib/acessos.ts).
+ * O mesmo modal serve para criar e editar. Criar pede e-mail, tipo e senha;
+ * editar troca o tipo e/ou a senha — o e-mail não, porque é a identidade da
+ * conta e não muda (ver lib/acessos.ts).
+ *
+ * Administrador é a direção: vê e mexe em tudo, inclusive nesta tela. É assim
+ * que a direção cadastra outro diretor — cria o cadastro, cria a conta e
+ * marca "Administrador".
  */
 function FormularioConta({
   linha,
@@ -581,18 +590,35 @@ function FormularioConta({
   const criando = !conta;
   const [email, setEmail] = useState(conta?.email || (linha.email as string) || "");
   const [senha, setSenha] = useState("");
+  const [papel, setPapel] = useState<Conta["papel"]>(conta?.papel ?? "lider");
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+
+  // Conta da direção sem cadastro de líder não tem recorte para virar
+  // colaborador; e ninguém muda o próprio tipo (a API recusa os dois).
+  const papelTravado = ehMinhaConta || Boolean(conta && !conta.lider_id);
 
   async function salvar() {
     setErro(null);
     setSalvando(true);
     try {
       if (conta) {
-        await api.patch("usuarios", { id: conta.id, senha });
-        aoSalvar(`Senha de ${linha.nome} redefinida.`);
+        const mudancas: Record<string, unknown> = {};
+        if (papel !== conta.papel) mudancas.papel = papel;
+        if (senha) mudancas.senha = senha;
+        if (!Object.keys(mudancas).length) {
+          setErro("Nada a alterar: escolha outro tipo de acesso ou informe uma senha nova.");
+          setSalvando(false);
+          return;
+        }
+        await api.patch("usuarios", { id: conta.id, ...mudancas });
+        aoSalvar(
+          mudancas.papel
+            ? `Acesso de ${linha.nome} alterado para ${papel === "pmo" ? "administrador" : "colaborador"}.`
+            : `Senha de ${linha.nome} redefinida.`
+        );
       } else {
-        await api.post("usuarios", { liderId: linha.id, nome: linha.nome, email, senha });
+        await api.post("usuarios", { liderId: linha.id, nome: linha.nome, email, senha, papel });
         aoSalvar(`Conta de ${linha.nome} criada.`);
       }
     } catch (e) {
@@ -603,13 +629,13 @@ function FormularioConta({
 
   return (
     <Modal
-      titulo={criando ? "Criar conta de acesso" : "Redefinir senha"}
+      titulo={criando ? "Criar conta de acesso" : "Editar acesso"}
       subtitulo={conta ? `${linha.nome} · ${conta.email}` : linha.nome}
       aoFechar={aoFechar}
       acoes={[
         { rotulo: "Cancelar", classe: "btn-secondary", onClick: aoFechar },
         {
-          rotulo: salvando ? "Salvando..." : criando ? "Criar conta" : "Redefinir",
+          rotulo: salvando ? "Salvando..." : criando ? "Criar conta" : "Salvar",
           classe: "btn-primary",
           onClick: salvar,
           desabilitado: salvando,
@@ -625,10 +651,19 @@ function FormularioConta({
         </Aviso>
       ) : null}
 
-      <Aviso tipo="info">
-        Anote a senha antes de salvar e entregue à pessoa por fora do sistema. O banco guarda só
-        o hash, então ela não é recuperável depois — se perder, o caminho é redefinir outra vez.
-      </Aviso>
+      {papel === "pmo" && conta?.papel !== "pmo" ? (
+        <Aviso tipo="atencao">
+          Administrador tem acesso total: vê todos os projetos e respostas, cria e desativa contas
+          e exclui registros. Use só para a direção.
+        </Aviso>
+      ) : null}
+
+      {criando || senha ? (
+        <Aviso tipo="info">
+          Anote a senha antes de salvar e entregue à pessoa por fora do sistema. O banco guarda só
+          o hash, então ela não é recuperável depois — se perder, o caminho é redefinir outra vez.
+        </Aviso>
+      ) : null}
 
       <div className="form-grade">
         {criando ? (
@@ -645,16 +680,38 @@ function FormularioConta({
             ajuda="Vira o login desta pessoa e não muda depois."
           />
         ) : null}
+        <CampoSelect
+          nome="conta-papel"
+          rotulo="Tipo de acesso"
+          valor={papel}
+          aoMudar={(v) => setPapel(v as Conta["papel"])}
+          opcoes={OPCOES_PAPEL}
+          vazio={null}
+          obrigatorio
+          larguraTotal
+          desabilitado={papelTravado}
+          ajuda={
+            ehMinhaConta
+              ? "Você não pode mudar o próprio tipo de acesso. Peça a outro administrador."
+              : conta && !conta.lider_id
+                ? "Conta da direção sem cadastro de líder: continua administrador."
+                : undefined
+          }
+        />
         <CampoTexto
           nome="conta-senha"
           rotulo={criando ? "Senha inicial" : "Nova senha"}
           tipo="password"
           valor={senha}
           aoMudar={setSenha}
-          obrigatorio
+          obrigatorio={criando}
           larguraTotal
           maxLength={200}
-          ajuda="Mínimo de 7 caracteres. Uma frase curta protege bem mais que sete símbolos — e é mais fácil de lembrar."
+          ajuda={
+            criando
+              ? "Mínimo de 7 caracteres. Uma frase curta protege bem mais que sete símbolos — e é mais fácil de lembrar."
+              : "Deixe em branco para manter a senha atual. Mínimo de 7 caracteres."
+          }
         />
       </div>
     </Modal>

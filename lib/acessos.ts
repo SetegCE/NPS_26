@@ -62,6 +62,11 @@ const SENHA_MINIMA = 7;
 /** Teto alinhado a lib/autenticar.ts, que recusa senha maior que isto no login. */
 const SENHA_MAXIMA = 200;
 
+const PAPEIS = ["pmo", "lider"] as const;
+
+/** Como a tela chama cada papel. `pmo` e a direcao, com acesso a tudo. */
+const NOME_DO_PAPEL = { pmo: "administrador", lider: "colaborador" } as const;
+
 const RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function senhaValida(valor: unknown): string {
@@ -154,6 +159,8 @@ export async function criarConta(req: Request): Promise<NextResponse> {
   const liderId = uuid(corpo.liderId, "liderId");
   const email = emailValido(corpo.email);
   const senha = senhaValida(corpo.senha);
+  // Colaborador (lider) por padrao: acesso maximo so quando a direcao pede.
+  const papel = umDe(corpo.papel, PAPEIS, "papel") || "lider";
 
   const lider = await um<{ id: string; nome: string; email: string | null }>(
     "lideres_nps",
@@ -162,14 +169,10 @@ export async function criarConta(req: Request): Promise<NextResponse> {
   );
   if (!lider) throw erro(404, "NAO_ENCONTRADO", "Lider nao encontrado.");
 
-  // Uma conta por lider. Duas seriam duas senhas validas para a mesma pessoa,
-  // e desativar uma delas deixaria a outra entrando — exatamente o buraco que
-  // a tela de acessos existe para fechar.
-  const existente = await um<Conta>(
-    "usuarios_nps",
-    { lider_id: liderId, papel: "lider" },
-    "id,email"
-  );
+  // Uma conta por lider, qualquer que seja o papel. Duas seriam duas senhas
+  // validas para a mesma pessoa, e desativar uma delas deixaria a outra
+  // entrando — exatamente o buraco que a tela de acessos existe para fechar.
+  const existente = await um<Conta>("usuarios_nps", { lider_id: liderId }, "id,email");
   if (existente) {
     throw erro(
       409,
@@ -186,7 +189,7 @@ export async function criarConta(req: Request): Promise<NextResponse> {
       nome,
       email,
       senha_hash: await gerarHash(senha),
-      papel: "lider",
+      papel,
       lider_id: liderId,
       ativo: true,
     });
@@ -214,19 +217,20 @@ export async function criarConta(req: Request): Promise<NextResponse> {
     acao: "criar",
     entidade: "conta_acesso",
     registroId: criada.id as string,
-    descricao: `conta de acesso criada para ${nome} (${email})`,
+    descricao: `conta de acesso (${NOME_DO_PAPEL[papel]}) criada para ${nome} (${email})`,
     atorTipo: "pmo",
     atorNome: sessao.nome,
-    depois: { nome, email, papel: "lider", lider_id: liderId, ativo: true },
+    depois: { nome, email, papel, lider_id: liderId, ativo: true },
   });
 
   return json({ item: semSegredo(criada) }, 201);
 }
 
 /**
- * Altera uma conta: liga/desliga o acesso, redefine a senha, ou as duas.
+ * Altera uma conta: liga/desliga o acesso, troca o papel (colaborador ou
+ * administrador) e/ou redefine a senha.
  *
- * Sao os dois unicos campos que esta tela mexe. Nome e e-mail ficam de fora
+ * Sao os unicos campos que esta tela mexe. Nome e e-mail ficam de fora
  * de proposito: o e-mail e a IDENTIDADE da conta (`email_norm` e unico e e
  * por ele que o login busca), e deixar que se troque por um campo de tela
  * transformaria "corrigir um typo" em "assumir outra conta".
@@ -238,7 +242,8 @@ export async function editarConta(req: Request): Promise<NextResponse> {
 
   const mexeNoAtivo = "ativo" in corpo;
   const mexeNaSenha = "senha" in corpo;
-  if (!mexeNoAtivo && !mexeNaSenha) {
+  const mexeNoPapel = "papel" in corpo;
+  if (!mexeNoAtivo && !mexeNaSenha && !mexeNoPapel) {
     throw erro(400, "NADA_A_ALTERAR", "Nenhum campo informado.");
   }
 
@@ -268,6 +273,50 @@ export async function editarConta(req: Request): Promise<NextResponse> {
     if (novoAtivo !== antes.ativo) campos.ativo = novoAtivo;
   }
 
+  if (mexeNoPapel) {
+    const novoPapel = umDe(corpo.papel, PAPEIS, "papel");
+    if (!novoPapel) throw erro(400, "CAMPO_INVALIDO", 'Campo "papel" invalido.');
+
+    if (novoPapel !== antes.papel) {
+      // Rebaixar a si mesmo tira a chave de quem esta usando a tela, e so
+      // outro administrador conseguiria devolver.
+      if (id === sessao.usuarioId) {
+        throw erro(
+          400,
+          "CONTA_PROPRIA",
+          "Voce nao pode alterar o proprio tipo de acesso. Peca a outro administrador."
+        );
+      }
+      if (novoPapel === "lider") {
+        // O recorte do colaborador sai de `lider_id`. Sem ele, a sessao nao
+        // teria o que filtrar — e colaborador sem recorte e pior que nenhum.
+        if (!antes.lider_id) {
+          throw erro(
+            400,
+            "SEM_CADASTRO_DE_LIDER",
+            `${antes.nome} nao tem cadastro de lider, entao nao pode virar colaborador. Desative o acesso, se for o caso.`
+          );
+        }
+        // Mesma regra da exclusao (migration 22): nao deixar o sistema sem
+        // nenhum administrador ativo.
+        if (antes.ativo) {
+          const { dados: admins } = await selecionar<{ id: string }[]>("usuarios_nps", {
+            colunas: "id",
+            filtros: { papel: "pmo", ativo: true },
+          });
+          if (!(admins || []).some((a) => a.id !== id)) {
+            throw erro(
+              400,
+              "ULTIMO_ADMIN",
+              "Esta e a ultima conta ativa de administrador. Promova outra antes."
+            );
+          }
+        }
+      }
+      campos.papel = novoPapel;
+    }
+  }
+
   if (mexeNaSenha) {
     // Trocar a senha muda a impressao digital da credencial e, com ela,
     // derruba TODA sessao aberta com a senha antiga — inclusive a de quem
@@ -291,6 +340,20 @@ export async function editarConta(req: Request): Promise<NextResponse> {
       atorNome: sessao.nome,
       antes: { ativo: antes.ativo },
       depois: { ativo: novoAtivo },
+    });
+  }
+
+  if ("papel" in campos) {
+    const novo = campos.papel as Conta["papel"];
+    await auditar({
+      acao: "alterar_papel",
+      entidade: "conta_acesso",
+      registroId: id,
+      descricao: `acesso de ${antes.nome} (${antes.email}) alterado de ${NOME_DO_PAPEL[antes.papel]} para ${NOME_DO_PAPEL[novo]}`,
+      atorTipo: "pmo",
+      atorNome: sessao.nome,
+      antes: { papel: antes.papel },
+      depois: { papel: novo },
     });
   }
 
