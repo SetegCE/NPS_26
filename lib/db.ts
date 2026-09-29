@@ -137,44 +137,44 @@ function totalDoRange(range: string | null): number | null {
 }
 
 const MENSAGENS: Record<string, string> = {
-  PROJETO_NAO_ENCONTRADO: "Projeto nao encontrado.",
+  PROJETO_NAO_ENCONTRADO: "Projeto não encontrado.",
   PROJETO_INATIVO: "Projeto inativo. Reative-o antes de prosseguir.",
-  LIDER_NAO_ENCONTRADO: "Lider nao encontrado.",
-  LIDER_INATIVO: "Este lider esta inativo.",
-  RESPONDENTE_NAO_ENCONTRADO: "Respondente nao encontrado.",
-  CODIGO_DUPLICADO: "Ja existe um projeto com este codigo.",
-  CODIGO_OBRIGATORIO: "Informe o codigo do projeto.",
+  LIDER_NAO_ENCONTRADO: "Líder não encontrado.",
+  LIDER_INATIVO: "Este líder está inativo.",
+  RESPONDENTE_NAO_ENCONTRADO: "Respondente não encontrado.",
+  CODIGO_DUPLICADO: "Já existe um projeto com este código.",
+  CODIGO_OBRIGATORIO: "Informe o código do projeto.",
   NOME_OBRIGATORIO: "Informe o nome do projeto.",
-  CICLO_NAO_ENCONTRADO: "Ciclo nao encontrado.",
-  CICLO_ENCERRADO: "Este ciclo esta encerrado e nao aceita alteracoes.",
+  CICLO_NAO_ENCONTRADO: "Ciclo não encontrado.",
+  CICLO_ENCERRADO: "Este ciclo está encerrado e não aceita alterações.",
   CICLO_OBRIGATORIO: "Selecione o ciclo da pesquisa.",
-  TIPO_INVALIDO: "Tipo de pesquisa invalido.",
-  PESQUISA_NAO_ENCONTRADA: "Pesquisa nao encontrada ou link invalido.",
+  TIPO_INVALIDO: "Tipo de pesquisa inválido.",
+  PESQUISA_NAO_ENCONTRADA: "Pesquisa não encontrada ou link inválido.",
   PESQUISA_ENCERRADA: "Esta pesquisa foi encerrada.",
-  PESQUISA_JA_RESPONDIDA: "Esta pesquisa ja foi respondida.",
-  Q4_OBRIGATORIA: "A nota de indicacao e obrigatoria.",
-  NOTA_INVALIDA: "As notas devem ser numeros de 0 a 10.",
-  NAO_AUTORIZADO: "Voce nao tem permissao sobre este registro.",
-  OBSERVACAO_OBRIGATORIA_PARA_OUTRO: "Informe a observacao quando o motivo for Outro.",
-  STATUS_INVALIDO: "Status invalido.",
-  DECISOES_INVALIDAS: "Lista de decisoes invalida.",
-  PROJETO_NAO_ELEGIVEL_NO_CICLO: "O projeto nao e elegivel neste ciclo.",
-  PROJETO_SEM_RESPOSTA_NO_CICLO: "O projeto ainda nao recebeu resposta neste ciclo.",
-  ASSUNTO_E_OBJETIVO_OBRIGATORIOS: "Informe o assunto e o objetivo do plano de acao.",
-  PLANO_COM_ACOES: "O plano ja tem acoes lancadas; remova-as antes de marcar como nao passivel.",
-  PLANO_NAO_ENCONTRADO: "Plano de acao nao encontrado.",
-  PROJETO_SEM_PLANO_DE_ACAO: "Este projeto foi marcado como nao passivel de plano de acao.",
-  PLANO_ENCERRADO: "Este plano de acao esta encerrado. Reabra-o para alterar.",
-  O_QUE_OBRIGATORIO: "Informe o que sera feito.",
-  SITUACAO_INVALIDA: "Situacao invalida.",
-  VALOR_INVALIDO: "Valor invalido.",
-  ACAO_NAO_ENCONTRADA: "Acao nao encontrada.",
-  EVIDENCIA_OBRIGATORIA: "Para marcar a acao como feita, informe o link da evidencia.",
-  EVIDENCIA_INVALIDA: "A evidencia deve ser um link que comece com http:// ou https://.",
-  RESPOSTA_NAO_ENCONTRADA: "Resposta nao encontrada.",
-  ISC_NAO_ENCONTRADO: "Nota ISC nao encontrada.",
-  CLIENTE_NAO_ENCONTRADO: "Cliente nao encontrado.",
-  CONTA_NAO_ENCONTRADA: "Conta de acesso nao encontrada.",
+  PESQUISA_JA_RESPONDIDA: "Esta pesquisa já foi respondida.",
+  Q4_OBRIGATORIA: "A nota de indicação é obrigatória.",
+  NOTA_INVALIDA: "As notas devem ser números de 0 a 10.",
+  NAO_AUTORIZADO: "Você não tem permissão sobre este registro.",
+  OBSERVACAO_OBRIGATORIA_PARA_OUTRO: "Informe a observação quando o motivo for Outro.",
+  STATUS_INVALIDO: "Status inválido.",
+  DECISOES_INVALIDAS: "Lista de decisões inválida.",
+  PROJETO_NAO_ELEGIVEL_NO_CICLO: "O projeto não é elegível neste ciclo.",
+  PROJETO_SEM_RESPOSTA_NO_CICLO: "O projeto ainda não recebeu resposta neste ciclo.",
+  ASSUNTO_E_OBJETIVO_OBRIGATORIOS: "Informe o assunto e o objetivo do plano de ação.",
+  PLANO_COM_ACOES: "O plano já tem ações lançadas; remova-as antes de marcar como não passível.",
+  PLANO_NAO_ENCONTRADO: "Plano de ação não encontrado.",
+  PROJETO_SEM_PLANO_DE_ACAO: "Este projeto foi marcado como não passível de plano de ação.",
+  PLANO_ENCERRADO: "Este plano de ação está encerrado. Reabra-o para alterar.",
+  O_QUE_OBRIGATORIO: "Informe o que será feito.",
+  SITUACAO_INVALIDA: "Situação inválida.",
+  VALOR_INVALIDO: "Valor inválido.",
+  ACAO_NAO_ENCONTRADA: "Ação não encontrada.",
+  EVIDENCIA_OBRIGATORIA: "Para marcar a ação como feita, informe o link da evidência.",
+  EVIDENCIA_INVALIDA: "A evidência deve ser um link que comece com http:// ou https://.",
+  RESPOSTA_NAO_ENCONTRADA: "Resposta não encontrada.",
+  ISC_NAO_ENCONTRADO: "Nota ISC não encontrada.",
+  CLIENTE_NAO_ENCONTRADO: "Cliente não encontrado.",
+  CONTA_NAO_ENCONTRADA: "Conta de acesso não encontrada.",
 };
 
 // Recusa de exclusao (nps_excluir, migration 22): o texto depois do prefixo ja
@@ -188,7 +188,7 @@ function traduzirMensagem(codigo: string): string {
   for (const chave of Object.keys(MENSAGENS)) {
     if (codigo.includes(chave)) return MENSAGENS[chave];
   }
-  if (codigo.includes("duplicate key")) return "Ja existe um registro com estes dados.";
+  if (codigo.includes("duplicate key")) return "Já existe um registro com estes dados.";
   if (codigo.includes("violates foreign key")) return "Registro relacionado inexistente.";
   if (codigo.includes("violates check constraint")) return "Dados fora das regras permitidas.";
   return codigo;
@@ -381,6 +381,6 @@ export async function auditar(dados: {
       p_depois: dados.depois ?? null,
     });
   } catch (e) {
-    console.warn("[NPS][auditoria] nao foi possivel registrar:", e);
+    console.warn("[NPS][auditoria] não foi possível registrar:", e);
   }
 }

@@ -39,7 +39,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       { id: projetoId },
       "id,codigo_clockify"
     );
-    if (!projeto) throw erro(404, "PROJETO_NAO_ENCONTRADO", "Projeto nao encontrado.");
+    if (!projeto) throw erro(404, "PROJETO_NAO_ENCONTRADO", "Projeto não encontrado.");
 
     const existente = await um<{ id: string; ativo: boolean }>("projeto_respondentes_nps", {
       projeto_id: projetoId,

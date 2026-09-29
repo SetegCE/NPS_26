@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     const id = uuid(corpo.id, "id");
 
     if (entidade === "conta" && id === sessao.usuarioId) {
-      throw erro(400, "CONTA_PROPRIA", "Voce nao pode excluir a propria conta.");
+      throw erro(400, "CONTA_PROPRIA", "Você não pode excluir a própria conta.");
     }
 
     // O lider sai com a conta de acesso dele: guarda quais eram para derrubar

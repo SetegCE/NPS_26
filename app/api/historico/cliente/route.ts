@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     const clienteId = uuid(query.get("cliente"), "cliente");
 
     const cliente = await um("clientes_nps", { id: clienteId });
-    if (!cliente) throw erro(404, "CLIENTE_NAO_ENCONTRADO", "Cliente nao encontrado.");
+    if (!cliente) throw erro(404, "CLIENTE_NAO_ENCONTRADO", "Cliente não encontrado.");
 
     const filtrosProjeto: Record<string, FiltroValor> = { cliente_id: clienteId };
     // O lider ve o historico do cliente, mas recortado aos projetos dele.

@@ -62,7 +62,7 @@ async function requisitar<T>(caminho: string, opcoes: Opcoes = {}): Promise<T> {
     throw new ErroApi(
       0,
       "SEM_CONEXAO",
-      "Nao foi possivel conectar ao servidor. Verifique sua conexao."
+      "Não foi possível conectar ao servidor. Verifique sua conexão."
     );
   }
 
@@ -91,7 +91,7 @@ async function requisitar<T>(caminho: string, opcoes: Opcoes = {}): Promise<T> {
     throw new ErroApi(
       resposta.status,
       corpo?.erro || "ERRO",
-      corpo?.mensagem || "Nao foi possivel completar a operacao.",
+      corpo?.mensagem || "Não foi possível completar a operação.",
       dados
     );
   }

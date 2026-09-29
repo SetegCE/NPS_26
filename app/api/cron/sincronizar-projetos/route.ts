@@ -24,7 +24,7 @@ function autorizado(req: Request): boolean {
 
 export async function GET(req: Request) {
   return rotaApi(async () => {
-    if (!autorizado(req)) throw erro(401, "NAO_AUTENTICADO", "Nao autorizado.");
+    if (!autorizado(req)) throw erro(401, "NAO_AUTENTICADO", "Não autorizado.");
     const resumo = await sincronizarProjetos({
       aplicar: true,
       ator: "SINCRONIZACAO CLOCKRVIEW",

@@ -31,9 +31,9 @@ export async function POST(req: Request) {
       { id: cicloId },
       "id,codigo,status"
     );
-    if (!ciclo) throw erro(404, "CICLO_NAO_ENCONTRADO", "Ciclo nao encontrado.");
+    if (!ciclo) throw erro(404, "CICLO_NAO_ENCONTRADO", "Ciclo não encontrado.");
     if (ciclo.status === "encerrado") {
-      throw erro(400, "CICLO_ENCERRADO", "Este ciclo esta encerrado e nao aceita novas pesquisas.");
+      throw erro(400, "CICLO_ENCERRADO", "Este ciclo está encerrado e não aceita novas pesquisas.");
     }
 
     const { dados: participacoes } = await selecionar<{ projeto_id: string | null }[]>(

@@ -5,14 +5,18 @@
 // Percepcao INTERNA do lider, de 0 a 10. Visualmente separado do NPS e sem
 // qualquer efeito sobre o calculo dele: sao duas perguntas diferentes feitas
 // a duas pessoas diferentes.
+//
+// A tela e um calendario: projetos nas linhas, os 12 meses do ano nas
+// colunas. O lider enxerga de relance o que ja preencheu e o que falta, e o
+// PMO tem a mesma grade como visao global, com o resumo por lider em cima.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CampoArea, CampoTexto, opcoesDe } from "@/componentes/Campo";
 import { ModalDetalhes } from "@/componentes/Detalhes";
 import { useExclusao } from "@/componentes/Excluir";
 import { Aviso, EstadoCarregando, EstadoErro, EstadoVazio } from "@/componentes/Estados";
 import { Modal } from "@/componentes/Modal";
-import { BotaoAcao, Tabela, type Coluna } from "@/componentes/Tabela";
+import { Tabela } from "@/componentes/Tabela";
 import { BarraFiltros, CabecalhoTela, Filtro, FiltroSelect } from "@/componentes/Tela";
 import { useToast } from "@/componentes/Toast";
 import { api, ErroApi, type Pagina } from "@/lib/cliente/api";
@@ -25,11 +29,13 @@ interface ProjetoIsc {
   nome: string;
   codigo_clockify: string;
   cliente_nome: string | null;
+  lider_id?: string | null;
   lider_nome: string | null;
 }
 
 interface RegistroIsc extends Record<string, unknown> {
   id?: string;
+  projeto_id?: string;
   nota: number | string;
   observacao: string | null;
   created_at: string | null;
@@ -43,15 +49,37 @@ interface Item extends Record<string, unknown> {
   isc: RegistroIsc | null;
 }
 
-interface Pendentes {
-  competencia: string;
-  avaliados: Item[];
-  pendentes: Item[];
-  total: number;
-  percentual_avaliado: number;
+interface Calendario {
+  ano: number;
+  meses: string[];
+  projetos: ProjetoIsc[];
+  registros: (RegistroIsc & { projeto_id: string; competencia: string })[];
 }
 
-const competenciaAtual = () => new Date().toISOString().slice(0, 7);
+/** A celula aberta: o projeto, o mes e o registro (se houver). */
+interface Celula extends Item {
+  competencia: string;
+}
+
+const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+const mesVigente = () => `${new Date().toISOString().slice(0, 7)}-01`;
+const anoVigente = () => new Date().getUTCFullYear();
+
+const umaCasa = (n: number) =>
+  n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+function media(notas: number[]): number | null {
+  return notas.length ? notas.reduce((s, n) => s + n, 0) / notas.length : null;
+}
+
+/** Mesmas faixas usadas no resto do sistema para notas de 0 a 10. */
+function faixa(nota: number | null): string {
+  if (nota === null) return "";
+  if (nota >= 9) return "alta";
+  if (nota >= 7) return "media";
+  return "baixa";
+}
 
 export function TelaIsc({ sessao }: { sessao: Sessao }) {
   const ehPmo = sessao.perfil === "pmo";
@@ -59,106 +87,128 @@ export function TelaIsc({ sessao }: { sessao: Sessao }) {
   const lideres = useAuxiliar(auxiliares.lideres);
   const clientes = useAuxiliar(auxiliares.clientes);
 
-  const [competencia, setCompetencia] = useState(competenciaAtual());
+  const [ano, setAno] = useState(anoVigente());
   const [lider, setLider] = useState("");
   const [cliente, setCliente] = useState("");
+  const [busca, setBusca] = useState("");
+  const [soPendentes, setSoPendentes] = useState(false);
 
-  const [dados, setDados] = useState<Pendentes | null>(null);
+  const [dados, setDados] = useState<Calendario | null>(null);
   const [erro, setErro] = useState<string | null>(null);
-  const [registrando, setRegistrando] = useState<Item | null>(null);
+  const [aberta, setAberta] = useState<Celula | null>(null);
+  const [registrando, setRegistrando] = useState<Celula | null>(null);
   const [historicoDe, setHistoricoDe] = useState<ProjetoIsc | null>(null);
-  const [vendo, setVendo] = useState<Item | null>(null);
   const [comparativoAberto, setComparativoAberto] = useState(false);
-  const exclusao = useExclusao(() => carregar());
 
   const carregar = useCallback(() => {
     setErro(null);
     api
-      .get<Pendentes>("isc/pendentes", { competencia, lider, cliente })
+      .get<Calendario>("isc/calendario", { ano, lider, cliente })
       .then(setDados)
       .catch((e) => {
         setDados(null);
         setErro(e instanceof ErroApi ? e.message : "Falha ao carregar o ISC.");
       });
-  }, [competencia, lider, cliente]);
+  }, [ano, lider, cliente]);
 
   useEffect(carregar, [carregar]);
 
-  const vigente = competencia === competenciaAtual();
+  const exclusao = useExclusao(() => {
+    setAberta(null);
+    carregar();
+  });
 
-  const colunas = (avaliados: boolean): Coluna<Item>[] => [
-    {
-      chave: "projeto",
-      rotulo: "Projeto",
-      render: (l) => (
-        <>
-          <span className="td-principal">{l.projeto.nome}</span>
-          <span className="td-sub" style={{ display: "block" }}>
-            {l.projeto.codigo_clockify}
-          </span>
-        </>
-      ),
-    },
-    { chave: "cliente", rotulo: "Cliente", render: (l) => l.projeto.cliente_nome || "—" },
-    { chave: "lider", rotulo: "Líder", render: (l) => l.projeto.lider_nome || "—" },
-    ...(avaliados
-      ? [
-          {
-            chave: "nota",
-            rotulo: "Nota ISC",
-            classe: "td-num",
-            render: (l: Item) => <strong style={{ fontSize: "1rem" }}>{l.isc?.nota}</strong>,
-          },
-          {
-            chave: "observacao",
-            rotulo: "Observação",
-            render: (l: Item) => l.isc?.observacao || "—",
-          },
-          {
-            chave: "registro",
-            rotulo: "Registrado em",
-            render: (l: Item) => formatarData(l.isc?.created_at),
-          },
-        ]
-      : [
-          {
-            chave: "pendente",
-            rotulo: "Situação",
-            render: () => <span className="selo selo-amarelo">Pendente</span>,
-          },
-        ]),
-    {
-      chave: "acoes",
-      rotulo: "Ações",
-      classe: "td-acoes",
-      render: (l) => (
-        <>
-          <BotaoAcao icone="ver" titulo="Ver avaliação ISC" onClick={() => setVendo(l)} />
-          {/* So a competencia vigente e editavel: reescrever a percepcao de
-              meses fechados apagaria o historico que a tela existe para
-              mostrar. */}
-          {vigente ? (
-            <BotaoAcao
-              icone="editar"
-              titulo={avaliados ? "Editar nota ISC" : "Registrar nota ISC"}
-              onClick={() => setRegistrando(l)}
-            />
-          ) : null}
-          <BotaoAcao
-            icone="historico"
-            titulo="Histórico mensal do ISC"
-            onClick={() => setHistoricoDe(l.projeto)}
-          />
-          {ehPmo && l.isc?.id
-            ? exclusao.botao("isc", l.isc.id, `a nota ISC de ${l.projeto.codigo_clockify}`)
-            : null}
-        </>
-      ),
-    },
-  ];
+  const vigente = mesVigente();
+  // Mes de referencia dos indicadores: o vigente no ano corrente, dezembro
+  // nos anos fechados.
+  const mesRef = ano === anoVigente() ? vigente : `${ano}-12-01`;
 
-  const notas = (dados?.avaliados || []).map((a) => Number(a.isc?.nota)).filter(Number.isFinite);
-  const media = notas.length ? (notas.reduce((s, n) => s + n, 0) / notas.length).toFixed(1) : "—";
+  const grade = useMemo(() => {
+    if (!dados) return null;
+    const porProjeto = new Map<string, Map<string, RegistroIsc>>();
+    for (const r of dados.registros) {
+      if (!porProjeto.has(r.projeto_id)) porProjeto.set(r.projeto_id, new Map());
+      porProjeto.get(r.projeto_id)!.set(r.competencia, r);
+    }
+    const notaDe = (p: string, m: string) => {
+      const r = porProjeto.get(p)?.get(m);
+      return r ? Number(r.nota) : null;
+    };
+    const mesesAteRef = dados.meses.filter((m) => m <= mesRef);
+
+    const linhas = dados.projetos.map((p) => {
+      const notas = mesesAteRef.map((m) => notaDe(p.id, m)).filter((n): n is number => n !== null);
+      return {
+        projeto: p,
+        registros: porProjeto.get(p.id) || new Map<string, RegistroIsc>(),
+        media: media(notas),
+        lacunas: mesesAteRef.length - notas.length,
+        pendenteNoMes: notaDe(p.id, mesRef) === null,
+      };
+    });
+
+    const notasDoMes = linhas.map((l) => notaDe(l.projeto.id, mesRef)).filter((n): n is number => n !== null);
+    const notasDoAno = dados.registros.map((r) => Number(r.nota));
+
+    const mediasPorMes = dados.meses.map((m) =>
+      media(linhas.map((l) => notaDe(l.projeto.id, m)).filter((n): n is number => n !== null))
+    );
+
+    // Resumo por lider (visao do PMO)
+    const porLider = new Map<string, { nome: string; id: string | null; linhas: typeof linhas }>();
+    for (const l of linhas) {
+      const chave = l.projeto.lider_id || "—";
+      if (!porLider.has(chave)) {
+        porLider.set(chave, { nome: l.projeto.lider_nome || "Sem líder", id: l.projeto.lider_id || null, linhas: [] });
+      }
+      porLider.get(chave)!.linhas.push(l);
+    }
+    const lideresResumo = [...porLider.values()]
+      .map((g) => {
+        const doMes = g.linhas.map((l) => notaDe(l.projeto.id, mesRef)).filter((n): n is number => n !== null);
+        const doAno = g.linhas.flatMap((l) => [...l.registros.values()].map((r) => Number(r.nota)));
+        return {
+          id: g.id,
+          nome: g.nome,
+          projetos: g.linhas.length,
+          preenchidos: doMes.length,
+          mediaMes: media(doMes),
+          mediaAno: media(doAno),
+          lacunas: g.linhas.reduce((s, l) => s + l.lacunas, 0),
+        };
+      })
+      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+
+    return {
+      linhas,
+      mediasPorMes,
+      lideresResumo,
+      mediaMes: media(notasDoMes),
+      mediaAno: media(notasDoAno),
+      preenchidosNoMes: notasDoMes.length,
+      lacunas: linhas.reduce((s, l) => s + l.lacunas, 0),
+    };
+  }, [dados, mesRef]);
+
+  const termo = busca.trim().toLowerCase();
+  const visiveis = (grade?.linhas || []).filter(
+    (l) =>
+      (!soPendentes || l.pendenteNoMes) &&
+      (!termo ||
+        l.projeto.nome.toLowerCase().includes(termo) ||
+        l.projeto.codigo_clockify.toLowerCase().includes(termo) ||
+        (l.projeto.cliente_nome || "").toLowerCase().includes(termo))
+  );
+
+  const total = dados?.projetos.length || 0;
+  const anos = Array.from({ length: 4 }, (_, i) => anoVigente() - i);
+
+  function abrir(projeto: ProjetoIsc, competencia: string, isc: RegistroIsc | null) {
+    const celula = { projeto, competencia, isc };
+    // Mes vazio abre direto o registro; mes preenchido abre o detalhe.
+    if (isc) setAberta(celula);
+    else setRegistrando(celula);
+  }
 
   return (
     <>
@@ -166,28 +216,15 @@ export function TelaIsc({ sessao }: { sessao: Sessao }) {
         titulo={
           ehPmo ? "ISC — Índice de Satisfação do Cliente" : "ISC — Percepção mensal dos meus projetos"
         }
-        descricao="Nota interna de 0 a 10 atribuída pelo líder. Não altera nem compõe o NPS."
+        descricao="Nota interna de 0 a 10 atribuída pelo líder, mês a mês. Não altera nem compõe o NPS."
         acoes={
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => setComparativoAberto(true)}
-          >
+          <button type="button" className="btn-secondary" onClick={() => setComparativoAberto(true)}>
             Comparar com NPS
           </button>
         }
       />
 
       <BarraFiltros>
-        <Filtro id="f-competencia" rotulo="Competência">
-          <input
-            id="f-competencia"
-            type="month"
-            value={competencia}
-            max={competenciaAtual()}
-            onChange={(e) => setCompetencia(e.target.value || competenciaAtual())}
-          />
-        </Filtro>
         {ehPmo ? (
           <>
             <FiltroSelect
@@ -206,101 +243,304 @@ export function TelaIsc({ sessao }: { sessao: Sessao }) {
             />
           </>
         ) : null}
+        <Filtro id="f-busca" rotulo="Buscar">
+          <input
+            id="f-busca"
+            type="search"
+            placeholder="Projeto, código ou cliente"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </Filtro>
+        <Filtro id="f-pendentes" rotulo="Mostrar">
+          <label className="isc-check">
+            <input
+              id="f-pendentes"
+              type="checkbox"
+              checked={soPendentes}
+              onChange={(e) => setSoPendentes(e.target.checked)}
+            />
+            Só pendentes em {formatarCompetencia(mesRef)}
+          </label>
+        </Filtro>
       </BarraFiltros>
 
-      {dados ? (
-        <div className="kpi-modulo">
-          <div className="kpi-card-modulo isc">
-            <div className="rotulo">ISC médio</div>
-            <div className="valor">{media}</div>
-            <div className="detalhe">{formatarCompetencia(dados.competencia)}</div>
-          </div>
-          <div className="kpi-card-modulo">
-            <div className="rotulo">Avaliados</div>
-            <div className="valor">
-              {dados.avaliados.length}/{dados.total}
+      {grade ? (
+        <>
+          {!ehPmo ? <h2 className="isc-secao">Meus indicadores</h2> : null}
+          <div className="kpi-modulo">
+            <div className="kpi-card-modulo isc">
+              <div className="rotulo">ISC do mês</div>
+              <div className="valor">{grade.mediaMes !== null ? umaCasa(grade.mediaMes) : "—"}</div>
+              <div className="detalhe">média em {formatarCompetencia(mesRef)}</div>
             </div>
-            <div className="detalhe">{dados.percentual_avaliado}% dos projetos</div>
+            <div className="kpi-card-modulo isc">
+              <div className="rotulo">ISC do ano</div>
+              <div className="valor">{grade.mediaAno !== null ? umaCasa(grade.mediaAno) : "—"}</div>
+              <div className="detalhe">média de {dados?.registros.length || 0} registro(s) em {ano}</div>
+            </div>
+            <div className="kpi-card-modulo">
+              <div className="rotulo">Preenchidos no mês</div>
+              <div className="valor">
+                {grade.preenchidosNoMes}/{total}
+              </div>
+              <div className="detalhe">
+                {total ? Math.round((grade.preenchidosNoMes / total) * 100) : 0}% dos projetos
+              </div>
+            </div>
+            <div className="kpi-card-modulo">
+              <div className="rotulo">Meses em aberto</div>
+              <div className="valor">{grade.lacunas}</div>
+              <div className="detalhe">lacunas até {formatarCompetencia(mesRef)}</div>
+            </div>
           </div>
-          <div className="kpi-card-modulo">
-            <div className="rotulo">Pendentes</div>
-            <div className="valor">{dados.pendentes.length}</div>
-            <div className="detalhe">aguardando registro</div>
-          </div>
-        </div>
+
+          {ehPmo && grade.lideresResumo.length > 1 ? (
+            <>
+              <h2 className="isc-secao">Por líder</h2>
+              <div className="tabela-wrap" style={{ marginBottom: 22 }}>
+                <Tabela
+                  colunas={[
+                    {
+                      chave: "nome",
+                      rotulo: "Líder",
+                      render: (l) => <span className="td-principal">{l.nome}</span>,
+                    },
+                    { chave: "projetos", rotulo: "Projetos", classe: "td-num", render: (l) => l.projetos },
+                    {
+                      chave: "preenchidos",
+                      rotulo: `Preenchidos ${formatarCompetencia(mesRef)}`,
+                      render: (l) => (
+                        <span className={`selo ${l.preenchidos === l.projetos ? "selo-verde" : "selo-amarelo"}`}>
+                          {l.preenchidos}/{l.projetos}
+                        </span>
+                      ),
+                    },
+                    {
+                      chave: "mediaMes",
+                      rotulo: "ISC do mês",
+                      classe: "td-num",
+                      render: (l) => (l.mediaMes !== null ? <strong>{umaCasa(l.mediaMes)}</strong> : "—"),
+                    },
+                    {
+                      chave: "mediaAno",
+                      rotulo: "ISC do ano",
+                      classe: "td-num",
+                      render: (l) => (l.mediaAno !== null ? umaCasa(l.mediaAno) : "—"),
+                    },
+                    { chave: "lacunas", rotulo: "Meses em aberto", classe: "td-num", render: (l) => l.lacunas },
+                    {
+                      chave: "acoes",
+                      rotulo: "Ações",
+                      classe: "td-acoes",
+                      render: (l) =>
+                        l.id ? (
+                          <button type="button" className="btn-mini" onClick={() => setLider(l.id!)}>
+                            Ver só este líder
+                          </button>
+                        ) : null,
+                    },
+                  ]}
+                  linhas={grade.lideresResumo}
+                  chaveDaLinha={(l) => l.id || l.nome}
+                />
+              </div>
+            </>
+          ) : null}
+        </>
       ) : null}
 
       {erro ? (
         <EstadoErro mensagem={erro} />
-      ) : !dados ? (
+      ) : !dados || !grade ? (
         <EstadoCarregando />
+      ) : !total ? (
+        <EstadoVazio
+          titulo="Nenhum projeto para avaliar."
+          descricao={ehPmo ? "Nenhum projeto ativo com esses filtros." : "Você não possui projetos ativos."}
+        />
       ) : (
         <>
-          {dados.pendentes.length ? (
-            <>
-              <h2 style={{ fontSize: "1rem", margin: "4px 0 10px" }}>Precisam ser avaliados</h2>
-              <div className="tabela-wrap" style={{ marginBottom: 22 }}>
-                <Tabela
-                  colunas={colunas(false)}
-                  linhas={dados.pendentes}
-                  chaveDaLinha={(l) => l.projeto.id}
-                />
+          <div className="isc-cabecalho-grade">
+            <h2 className="isc-secao">Calendário {ano}</h2>
+            <div className="isc-ferramentas">
+              <div className="isc-legenda" aria-hidden="true">
+                <span><i className="isc-cel alta" /> 9 a 10</span>
+                <span><i className="isc-cel media" /> 7 a 8</span>
+                <span><i className="isc-cel baixa" /> 0 a 6</span>
+                <span><i className="isc-cel vazia" /> a preencher</span>
               </div>
-            </>
-          ) : null}
-
-          {dados.avaliados.length ? (
-            <>
-              <h2 style={{ fontSize: "1rem", margin: "4px 0 10px" }}>Já avaliados</h2>
-              <div className="tabela-wrap">
-                <Tabela
-                  colunas={colunas(true)}
-                  linhas={dados.avaliados}
-                  chaveDaLinha={(l) => l.projeto.id}
-                />
-              </div>
-            </>
-          ) : null}
-
-          {!dados.pendentes.length && !dados.avaliados.length ? (
-            <EstadoVazio
-              titulo="Nenhum projeto para avaliar."
-              descricao="Você não possui projetos ativos nesta competência."
-            />
-          ) : null}
+              <label className="isc-ano">
+                Ano
+                <select value={String(ano)} onChange={(e) => setAno(Number(e.target.value))}>
+                  {anos.map((a) => (
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+          <div className="tabela-wrap">
+            <div className="tabela-scroll">
+              <table className="tabela-modulo isc-calendario">
+                <thead>
+                  <tr>
+                    <th className="isc-col-projeto">Projeto</th>
+                    {dados.meses.map((m, i) => (
+                      <th key={m} className={`isc-col-mes ${m === vigente ? "mes-atual" : ""}`}>
+                        {MESES[i]}
+                      </th>
+                    ))}
+                    <th className="isc-col-mes">Média</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visiveis.length ? (
+                    visiveis.map((l) => (
+                      <tr key={l.projeto.id}>
+                        <td className="isc-col-projeto">
+                          <button
+                            type="button"
+                            className="isc-projeto"
+                            title="Histórico mensal do ISC"
+                            onClick={() => setHistoricoDe(l.projeto)}
+                          >
+                            <span className="td-principal">{l.projeto.nome}</span>
+                            <span className="td-sub">
+                              {l.projeto.codigo_clockify} · {l.projeto.cliente_nome || "—"}
+                              {ehPmo ? ` · ${l.projeto.lider_nome || "sem líder"}` : ""}
+                            </span>
+                          </button>
+                        </td>
+                        {dados.meses.map((m) => {
+                          const r = l.registros.get(m) || null;
+                          const n = r ? Number(r.nota) : null;
+                          const futuro = m > vigente;
+                          return (
+                            <td key={m} className={`isc-col-mes ${m === vigente ? "mes-atual" : ""}`}>
+                              {futuro ? (
+                                <span className="isc-cel futura" aria-hidden="true" />
+                              ) : (
+                                <button
+                                  type="button"
+                                  className={`isc-cel ${r ? faixa(n) : "vazia"}`}
+                                  title={
+                                    r
+                                      ? `${formatarCompetencia(m)}: ISC ${n}${r.observacao ? ` — ${r.observacao}` : ""}`
+                                      : `Registrar ISC de ${formatarCompetencia(m)}`
+                                  }
+                                  onClick={() => abrir(l.projeto, m, r)}
+                                >
+                                  {r ? n : "+"}
+                                </button>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className="isc-col-mes">
+                          <strong className={`isc-media ${faixa(l.media)}`}>
+                            {l.media !== null ? umaCasa(l.media) : "—"}
+                          </strong>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={14} className="td-sub" style={{ textAlign: "center", padding: 24 }}>
+                        Nenhum projeto com esses filtros.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td className="isc-col-projeto">
+                      <span className="td-principal">Média do mês</span>
+                    </td>
+                    {grade.mediasPorMes.map((mm, i) => (
+                      <td key={dados.meses[i]} className={`isc-col-mes ${dados.meses[i] === vigente ? "mes-atual" : ""}`}>
+                        <strong className={`isc-media ${faixa(mm)}`}>{mm !== null ? umaCasa(mm) : "—"}</strong>
+                      </td>
+                    ))}
+                    <td className="isc-col-mes">
+                      <strong className={`isc-media ${faixa(grade.mediaAno)}`}>
+                        {grade.mediaAno !== null ? umaCasa(grade.mediaAno) : "—"}
+                      </strong>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+          <p className="td-sub" style={{ marginTop: 10 }}>
+            Clique em um mês vazio para registrar a nota. Meses anteriores podem ser preenchidos
+            enquanto estiverem vazios; só o mês vigente pode ser editado depois de registrado.
+          </p>
         </>
       )}
 
-      {vendo ? (
+      {aberta ? (
         <ModalDetalhes
-          titulo={vendo.projeto.nome}
-          subtitulo={`ISC de ${formatarCompetencia(competencia)}`}
-          aoFechar={() => setVendo(null)}
+          titulo={aberta.projeto.nome}
+          subtitulo={`ISC de ${formatarCompetencia(aberta.competencia)}`}
+          aoFechar={() => setAberta(null)}
           itens={[
-            { rotulo: "Projeto", valor: vendo.projeto.nome },
-            { rotulo: "Código", valor: vendo.projeto.codigo_clockify },
-            { rotulo: "Cliente", valor: vendo.projeto.cliente_nome },
-            { rotulo: "Líder", valor: vendo.projeto.lider_nome },
-            { rotulo: "Competência", valor: formatarCompetencia(competencia) },
+            { rotulo: "Código", valor: aberta.projeto.codigo_clockify },
+            { rotulo: "Cliente", valor: aberta.projeto.cliente_nome },
+            { rotulo: "Líder no período", valor: aberta.isc?.lider_nome || aberta.projeto.lider_nome },
+            { rotulo: "Competência", valor: formatarCompetencia(aberta.competencia) },
             {
               rotulo: "Nota ISC",
-              valor: vendo.isc ? (
-                <strong style={{ fontSize: "1rem" }}>{vendo.isc.nota}</strong>
-              ) : (
-                <span className="selo selo-amarelo">Pendente</span>
-              ),
+              valor: <strong style={{ fontSize: "1rem" }}>{aberta.isc?.nota}</strong>,
             },
-            { rotulo: "Registrado em", valor: vendo.isc ? formatarData(vendo.isc.created_at, true) : null },
-            { rotulo: "Registrado por", valor: vendo.isc?.registrado_por },
-            { rotulo: "Observação", valor: vendo.isc?.observacao, largo: true },
+            { rotulo: "Registrado em", valor: formatarData(aberta.isc?.created_at, true) },
+            { rotulo: "Registrado por", valor: aberta.isc?.registrado_por },
+            { rotulo: "Observação", valor: aberta.isc?.observacao, largo: true },
           ]}
-        />
+        >
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {/* So a competencia vigente e editavel: reescrever a percepcao de
+                meses fechados apagaria o historico que a tela existe para
+                mostrar. */}
+            {aberta.competencia === vigente ? (
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => {
+                  setRegistrando(aberta);
+                  setAberta(null);
+                }}
+              >
+                Editar nota
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                setHistoricoDe(aberta.projeto);
+                setAberta(null);
+              }}
+            >
+              Histórico do projeto
+            </button>
+            {ehPmo && aberta.isc?.id
+              ? exclusao.botao(
+                  "isc",
+                  aberta.isc.id,
+                  `a nota ISC de ${aberta.projeto.codigo_clockify} em ${formatarCompetencia(aberta.competencia)}`
+                )
+              : null}
+          </div>
+        </ModalDetalhes>
       ) : null}
 
       {registrando ? (
         <Registro
           item={registrando}
-          competencia={dados?.competencia || competencia}
+          competencia={registrando.competencia}
           aoFechar={() => setRegistrando(null)}
           aoSalvar={(novo) => {
             setRegistrando(null);
@@ -310,16 +550,10 @@ export function TelaIsc({ sessao }: { sessao: Sessao }) {
         />
       ) : null}
 
-      {historicoDe ? (
-        <Historico projeto={historicoDe} aoFechar={() => setHistoricoDe(null)} />
-      ) : null}
+      {historicoDe ? <Historico projeto={historicoDe} aoFechar={() => setHistoricoDe(null)} /> : null}
 
       {comparativoAberto ? (
-        <Comparativo
-          lider={lider}
-          cliente={cliente}
-          aoFechar={() => setComparativoAberto(false)}
-        />
+        <Comparativo lider={lider} cliente={cliente} aoFechar={() => setComparativoAberto(false)} />
       ) : null}
       {exclusao.modal}
     </>
@@ -487,7 +721,6 @@ interface ItemComparativo {
   q4_respostas: number;
 }
 
-const umaCasa = (n: number) => n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 /**
  * As duas medias estao na mesma escala (0 a 10): media do ISC dado pelo lider

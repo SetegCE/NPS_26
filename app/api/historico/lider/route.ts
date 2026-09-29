@@ -32,10 +32,10 @@ export async function GET(req: Request) {
     let liderId = uuidOpcional(query.get("lider"), "lider");
     // O lider so consulta a si proprio, independente do que peca na query.
     if (sessao.perfil === PERFIL_LIDER) liderId = sessao.liderId;
-    if (!liderId) throw erro(400, "LIDER_OBRIGATORIO", "Informe o lider.");
+    if (!liderId) throw erro(400, "LIDER_OBRIGATORIO", "Informe o líder.");
 
     const lider = await um("lideres_nps", { id: liderId });
-    if (!lider) throw erro(404, "LIDER_NAO_ENCONTRADO", "Lider nao encontrado.");
+    if (!lider) throw erro(404, "LIDER_NAO_ENCONTRADO", "Líder não encontrado.");
 
     // Todos os periodos em que este lider foi responsavel por algum projeto.
     const { dados: periodos } = await selecionar<Periodo[]>("projeto_lideranca_hist_nps", {
@@ -86,7 +86,7 @@ export async function GET(req: Request) {
       respostas_fora_do_periodo: (todas || []).length - doPeriodo.length,
       isc: iscs || [],
       resumo: resumirRespostas(doPeriodo),
-      aviso: "Somente respostas registradas durante os periodos de responsabilidade deste lider.",
+      aviso: "Somente respostas registradas durante os períodos de responsabilidade deste líder.",
     });
   });
 }

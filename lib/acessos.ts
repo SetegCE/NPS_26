@@ -89,7 +89,7 @@ function emailValido(valor: unknown, campo = "email"): string {
   // O banco tem a mesma checagem em constraint. Repetir aqui é o que troca um
   // erro cru do Postgres por uma frase que a tela sabe mostrar.
   if (!RE_EMAIL.test(v)) {
-    throw erro(400, "EMAIL_INVALIDO", "Informe um e-mail valido.");
+    throw erro(400, "EMAIL_INVALIDO", "Informe um e-mail válido.");
   }
   return v;
 }
@@ -167,7 +167,7 @@ export async function criarConta(req: Request): Promise<NextResponse> {
     { id: liderId },
     "id,nome,email"
   );
-  if (!lider) throw erro(404, "NAO_ENCONTRADO", "Lider nao encontrado.");
+  if (!lider) throw erro(404, "NAO_ENCONTRADO", "Líder não encontrado.");
 
   // Uma conta por lider, qualquer que seja o papel. Duas seriam duas senhas
   // validas para a mesma pessoa, e desativar uma delas deixaria a outra
@@ -177,7 +177,7 @@ export async function criarConta(req: Request): Promise<NextResponse> {
     throw erro(
       409,
       "CONTA_EXISTENTE",
-      `${lider.nome} ja tem conta de acesso. Use "redefinir senha".`
+      `${lider.nome} já tem conta de acesso. Use "redefinir senha".`
     );
   }
 
@@ -197,7 +197,7 @@ export async function criarConta(req: Request): Promise<NextResponse> {
     // `email_norm` e unico no banco. Traduzir aqui evita que a tela mostre a
     // mensagem crua do Postgres, que cita indice e coluna.
     if (e instanceof Error && /duplicate key|ja existe|unique/i.test(e.message)) {
-      throw erro(409, "EMAIL_DUPLICADO", "Ja existe uma conta com este e-mail.");
+      throw erro(409, "EMAIL_DUPLICADO", "Já existe uma conta com este e-mail.");
     }
     throw e;
   }
@@ -209,7 +209,7 @@ export async function criarConta(req: Request): Promise<NextResponse> {
     try {
       await atualizar("lideres_nps", { id: liderId }, { email });
     } catch (e) {
-      console.warn("[NPS][acessos] nao foi possivel copiar o e-mail para o cadastro:", e);
+      console.warn("[NPS][acessos] não foi possível copiar o e-mail para o cadastro:", e);
     }
   }
 
@@ -248,7 +248,7 @@ export async function editarConta(req: Request): Promise<NextResponse> {
   }
 
   const antes = await um<Conta>("usuarios_nps", { id }, COLUNAS);
-  if (!antes) throw erro(404, "NAO_ENCONTRADO", "Conta de acesso nao encontrada.");
+  if (!antes) throw erro(404, "NAO_ENCONTRADO", "Conta de acesso não encontrada.");
 
   const campos: Record<string, unknown> = {};
   let novoAtivo: boolean | null = null;
@@ -265,7 +265,7 @@ export async function editarConta(req: Request): Promise<NextResponse> {
       throw erro(
         400,
         "CONTA_PROPRIA",
-        "Voce nao pode desativar a propria conta. Peca a outro PMO."
+        "Você não pode desativar a própria conta. Peça a outro PMO."
       );
     }
     // Ja esta como pedido: a lista da tela pode estar um pouco velha, e isso
@@ -284,7 +284,7 @@ export async function editarConta(req: Request): Promise<NextResponse> {
         throw erro(
           400,
           "CONTA_PROPRIA",
-          "Voce nao pode alterar o proprio tipo de acesso. Peca a outro administrador."
+          "Você não pode alterar o próprio tipo de acesso. Peça a outro administrador."
         );
       }
       if (novoPapel === "lider") {
@@ -294,7 +294,7 @@ export async function editarConta(req: Request): Promise<NextResponse> {
           throw erro(
             400,
             "SEM_CADASTRO_DE_LIDER",
-            `${antes.nome} nao tem cadastro de lider, entao nao pode virar colaborador. Desative o acesso, se for o caso.`
+            `${antes.nome} não tem cadastro de líder, então não pode virar colaborador. Desative o acesso, se for o caso.`
           );
         }
         // Mesma regra da exclusao (migration 22): nao deixar o sistema sem
@@ -308,7 +308,7 @@ export async function editarConta(req: Request): Promise<NextResponse> {
             throw erro(
               400,
               "ULTIMO_ADMIN",
-              "Esta e a ultima conta ativa de administrador. Promova outra antes."
+              "Esta é a última conta ativa de administrador. Promova outra antes."
             );
           }
         }

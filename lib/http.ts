@@ -34,7 +34,7 @@ export async function rotaApi(
     if (e instanceof ErroHttp) {
       return json({ erro: e.codigo, mensagem: e.message }, e.status);
     }
-    console.error("[NPS][API] Erro nao tratado:", e);
+    console.error("[NPS][API] Erro não tratado:", e);
     return json(
       { erro: "ERRO_INTERNO", mensagem: "Erro inesperado no servidor. Tente novamente." },
       500
@@ -48,18 +48,18 @@ export async function lerCorpo(req: Request): Promise<Record<string, unknown>> {
   // de nenhuma tela deste sistema.
   const tamanho = Number(req.headers.get("content-length") || 0);
   if (tamanho > 1_000_000) {
-    throw erro(413, "CORPO_MUITO_GRANDE", "Corpo da requisicao excede o limite.");
+    throw erro(413, "CORPO_MUITO_GRANDE", "Corpo da requisição excede o limite.");
   }
 
   let bruto: string;
   try {
     bruto = await req.text();
   } catch {
-    throw erro(400, "CORPO_ILEGIVEL", "Nao foi possivel ler o corpo da requisicao.");
+    throw erro(400, "CORPO_ILEGIVEL", "Não foi possível ler o corpo da requisição.");
   }
 
   if (bruto.length > 1_000_000) {
-    throw erro(413, "CORPO_MUITO_GRANDE", "Corpo da requisicao excede o limite.");
+    throw erro(413, "CORPO_MUITO_GRANDE", "Corpo da requisição excede o limite.");
   }
   if (!bruto) return {};
 
@@ -68,10 +68,10 @@ export async function lerCorpo(req: Request): Promise<Record<string, unknown>> {
     // `null`, numero ou array no lugar de objeto quebrariam todo acesso por
     // chave logo adiante. Rejeitar aqui da erro claro em vez de TypeError.
     if (dados === null || typeof dados !== "object" || Array.isArray(dados)) {
-      throw new Error("nao e objeto");
+      throw new Error("não é objeto");
     }
     return dados as Record<string, unknown>;
   } catch {
-    throw erro(400, "JSON_INVALIDO", "Corpo da requisicao nao e um JSON valido.");
+    throw erro(400, "JSON_INVALIDO", "Corpo da requisição não é um JSON válido.");
   }
 }

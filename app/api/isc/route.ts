@@ -96,7 +96,7 @@ export async function POST(req: Request) {
       throw erro(
         400,
         "COMPETENCIA_FUTURA",
-        "Nao e possivel registrar ISC de uma competencia futura."
+        "Não é possível registrar ISC de uma competência futura."
       );
     }
 

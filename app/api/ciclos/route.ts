@@ -31,7 +31,7 @@ function dataOpcional(valor: unknown, campo: string): string | null {
   if (valor === undefined || valor === null || valor === "") return null;
   const v = String(valor).trim();
   if (!RE_DATA.test(v) || Number.isNaN(Date.parse(v))) {
-    throw erro(400, "DATA_INVALIDA", `Campo "${campo}" deve ser uma data valida.`);
+    throw erro(400, "DATA_INVALIDA", `Campo "${campo}" deve ser uma data válida.`);
   }
   return v;
 }
@@ -59,14 +59,14 @@ function conferirCorte(corte: unknown, inicio: unknown, fim: unknown): void {
     throw erro(
       400,
       "CORTE_FORA_DO_CICLO",
-      "O ultimo dia de e-mail nao pode ser anterior ao inicio do ciclo."
+      "O último dia de e-mail não pode ser anterior ao início do ciclo."
     );
   }
   if (fim && d > String(fim)) {
     throw erro(
       400,
       "CORTE_FORA_DO_CICLO",
-      "O ultimo dia de e-mail nao pode passar do fim do ciclo — o WhatsApp ficaria sem periodo."
+      "O último dia de e-mail não pode passar do fim do ciclo — o WhatsApp ficaria sem período."
     );
   }
 }
@@ -124,11 +124,11 @@ export async function POST(req: Request) {
       throw erro(
         400,
         "CODIGO_INVALIDO",
-        "O codigo do ciclo deve seguir o formato AAAA.S (ex: 2026.2)."
+        "O código do ciclo deve seguir o formato AAAA.S (ex: 2026.2)."
       );
     }
     if (await um("ciclos_nps", { codigo }, "id")) {
-      throw erro(409, "CICLO_DUPLICADO", "Ja existe um ciclo com este codigo.");
+      throw erro(409, "CICLO_DUPLICADO", "Já existe um ciclo com este código.");
     }
 
     // Datas padrao derivadas do codigo: semestre 1 = jan-jun, 2 = jul-dez.
@@ -171,7 +171,7 @@ export async function PATCH(req: Request) {
     const id = uuid(corpo.id, "id");
 
     const antes = await um<Record<string, unknown>>("ciclos_nps", { id });
-    if (!antes) throw erro(404, "CICLO_NAO_ENCONTRADO", "Ciclo nao encontrado.");
+    if (!antes) throw erro(404, "CICLO_NAO_ENCONTRADO", "Ciclo não encontrado.");
 
     // O `codigo` nao e editavel: ele e a identidade do ciclo e aparece em
     // respostas, pesquisas e no comparativo. Renomear reescreveria o passado.

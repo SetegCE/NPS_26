@@ -54,7 +54,7 @@ const global_ = globalThis as unknown as { __npsPool?: Pool };
 export function esquema(): string {
   const s = process.env.DATABASE_SCHEMA || "public";
   if (!/^[a-z_][a-z0-9_]*$/.test(s)) {
-    throw erro(500, "CONFIG_INVALIDA", `DATABASE_SCHEMA invalido: ${s}`);
+    throw erro(500, "CONFIG_INVALIDA", `DATABASE_SCHEMA inválido: ${s}`);
   }
   return s;
 }
@@ -116,7 +116,7 @@ function falhaDoPg(e: unknown): FalhaBanco {
         return new FalhaBanco(400, msg);
       }
       // Sem codigo SQL (conexao recusada, timeout) ou classe 08 (conexao).
-      console.error("[NPS][pg] falha de conexao/consulta:", e);
+      console.error("[NPS][pg] falha de conexão/consulta:", e);
       return new FalhaBanco(503, "Falha na consulta ao banco.");
   }
 }
@@ -215,7 +215,7 @@ function carregarCatalogo(): Promise<Catalogo> {
 
 function id(nome: string): string {
   if (!/^[a-z_][a-z0-9_]*$/i.test(nome)) {
-    throw erro(400, "IDENTIFICADOR_INVALIDO", `Identificador invalido: ${nome}`);
+    throw erro(400, "IDENTIFICADOR_INVALIDO", `Identificador inválido: ${nome}`);
   }
   return `"${nome}"`;
 }
@@ -223,7 +223,7 @@ function id(nome: string): string {
 /** Nome de tipo para cast ("uuid", "int4"...), vindo do catalogo. */
 function tipoSeguro(tipo: string | undefined): string {
   const t = tipo || "text";
-  if (!/^[a-z_][a-z0-9_ ]*$/i.test(t)) throw erro(500, "TIPO_INVALIDO", `Tipo invalido: ${t}`);
+  if (!/^[a-z_][a-z0-9_ ]*$/i.test(t)) throw erro(500, "TIPO_INVALIDO", `Tipo inválido: ${t}`);
   return t;
 }
 
@@ -376,7 +376,7 @@ function condicao(
       if (s === "null") return `${col} is null`;
       if (s === "true") return `${col} is true`;
       if (s === "false") return `${col} is false`;
-      throw erro(400, "FILTRO_INVALIDO", `Valor invalido para is: ${v}`);
+      throw erro(400, "FILTRO_INVALIDO", `Valor inválido para is: ${v}`);
     }
     case "in": {
       const lista = String(v)
@@ -386,7 +386,7 @@ function condicao(
       return `${col} = any(${p.add(lista)}::${tipoSeguro(tipo)}[])`;
     }
     default:
-      throw erro(400, "FILTRO_INVALIDO", `Operador nao suportado: ${op}`);
+      throw erro(400, "FILTRO_INVALIDO", `Operador não suportado: ${op}`);
   }
 }
 
@@ -422,7 +422,7 @@ function condicaoOu(
 ): string {
   const conds = dividir(ou).map((parte) => {
     const m = parte.match(/^([a-z_][a-z0-9_]*)\.([a-z]+)\.([\s\S]*)$/i);
-    if (!m) throw erro(400, "FILTRO_INVALIDO", `Filtro "ou" invalido: ${parte}`);
+    if (!m) throw erro(400, "FILTRO_INVALIDO", `Filtro "ou" inválido: ${parte}`);
     let valor = m[3];
     try {
       valor = decodeURIComponent(valor); // algumas rotas codificam para URL
@@ -558,7 +558,7 @@ export async function pgRpc(funcao: string, argumentos: Record<string, unknown>)
   const nomes = Object.keys(argumentos);
   // Sobrecarga: fica a versao que aceita todos os argumentos passados.
   const f = candidatas.find((c) => nomes.every((n) => c.args.some((a) => a.nome === n)));
-  if (!f) throw new FalhaBanco(404, `Funcao ${funcao} nao encontrada.`);
+  if (!f) throw new FalhaBanco(404, `Função ${funcao} não encontrada.`);
 
   const p = new Parametros();
   const lista = f.args

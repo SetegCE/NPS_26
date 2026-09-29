@@ -29,7 +29,7 @@ export function EstadoErro({ mensagem }: { mensagem: string }) {
   return (
     <div className="estado-erro">
       <Icone nome="info" tamanho={34} />
-      <strong>Nao foi possivel carregar</strong>
+      <strong>Não foi possível carregar</strong>
       <span>{mensagem}</span>
     </div>
   );

@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       throw erro(400, "DECISOES_INVALIDAS", "Informe ao menos uma decisao.");
     }
     if (corpo.decisoes.length > 500) {
-      throw erro(400, "DECISOES_EXCESSIVAS", "Envie no maximo 500 decisoes por vez.");
+      throw erro(400, "DECISOES_EXCESSIVAS", "Envie no máximo 500 decisões por vez.");
     }
 
     const decisoes = (corpo.decisoes as Record<string, unknown>[]).map((d, i) => {
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
         throw erro(
           400,
           "OBSERVACAO_OBRIGATORIA_PARA_OUTRO",
-          'Informe a observacao quando o motivo for "Outro".'
+          'Informe a observação quando o motivo for "Outro".'
         );
       }
 

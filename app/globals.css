@@ -1925,3 +1925,73 @@ table.tabela-modulo th.td-centro { text-align: center; }
 /* Um link por pessoa no ciclo: aviso "Link único" / "Resposta única" sob o
    nome do respondente (Pesquisas e Respostas). */
 .selo-link-unico { color: var(--blue-text); font-weight: 600; }
+
+/* ─── Calendário do ISC ─────────────────────────────────────────────────
+   Projetos nas linhas, meses nas colunas. A coluna do projeto fica presa
+   à esquerda para a grade rolar no celular sem perder de quem é a linha. */
+
+.isc-secao { font-size: 1rem; margin: 4px 0 10px; }
+.isc-check { display: flex; align-items: center; gap: 6px; height: 34px; font-size: 0.8rem; color: var(--text-secondary); text-transform: none; letter-spacing: 0; font-weight: 500; cursor: pointer; }
+.filtros-modulo .isc-check input { height: auto; width: 16px; padding: 0; accent-color: var(--seteg-orange); }
+
+.isc-cabecalho-grade { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.isc-ferramentas { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+.isc-legenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.74rem; color: var(--text-muted); }
+.isc-ano { display: inline-flex; align-items: center; gap: 8px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--text-muted); }
+.isc-ano select {
+  height: 32px; padding: 0 9px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface-2); color: var(--text-primary);
+  font-family: inherit; font-size: 0.84rem; font-weight: 600;
+  text-transform: none; letter-spacing: 0; cursor: pointer;
+}
+.isc-ano select:focus-visible { outline: 2px solid var(--seteg-orange); outline-offset: 1px; }
+.isc-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.isc-legenda .isc-cel { width: 16px; height: 16px; min-width: 16px; border-radius: 4px; }
+
+table.isc-calendario th.isc-col-mes,
+table.isc-calendario td.isc-col-mes { text-align: center; padding: 7px 4px; width: 52px; }
+table.isc-calendario .isc-col-projeto {
+  position: sticky; left: 0; z-index: 1;
+  background: var(--glass-bg);
+  min-width: 240px; max-width: 320px;
+  box-shadow: 1px 0 0 var(--line);
+}
+table.isc-calendario th.isc-col-projeto { z-index: 3; background: var(--surface-sunken); }
+table.isc-calendario tbody tr:hover .isc-col-projeto { background: var(--glass-bg-hover); }
+table.isc-calendario .mes-atual { background: rgba(255, 130, 0, 0.07); }
+table.isc-calendario th.mes-atual { color: var(--orange-text); box-shadow: inset 0 -2px 0 var(--seteg-orange); }
+table.isc-calendario tfoot td { border-top: 1px solid var(--line); background: var(--surface-sunken); padding-top: 10px; padding-bottom: 10px; }
+table.isc-calendario tfoot .isc-col-projeto { background: var(--surface-sunken); }
+
+.isc-projeto { display: flex; flex-direction: column; gap: 2px; text-align: left; background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+.isc-projeto:hover .td-principal { color: var(--seteg-orange); }
+
+.isc-cel {
+  display: inline-grid; place-items: center;
+  width: 38px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font: inherit; font-weight: 800; font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: transform .08s ease, box-shadow .12s ease;
+}
+button.isc-cel:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(7, 29, 73, 0.14); }
+button.isc-cel:focus-visible { outline: 2px solid var(--seteg-orange); outline-offset: 2px; }
+.isc-cel.alta  { background: rgba(34, 197, 94, 0.16);  color: var(--green-text);  border-color: rgba(34, 197, 94, 0.34); }
+.isc-cel.media { background: rgba(245, 158, 11, 0.18); color: var(--yellow-text); border-color: rgba(245, 158, 11, 0.36); }
+.isc-cel.baixa { background: rgba(239, 68, 68, 0.14);  color: var(--red-text);    border-color: rgba(239, 68, 68, 0.34); }
+.isc-cel.vazia { background: transparent; color: var(--text-muted); border: 1px dashed var(--line-strong, var(--line)); font-weight: 600; }
+.isc-cel.vazia:hover { color: var(--seteg-orange); border-color: var(--seteg-orange); }
+.isc-cel.futura { cursor: default; background: var(--surface-sunken); opacity: 0.45; }
+
+.isc-media { font-variant-numeric: tabular-nums; }
+.isc-media.alta  { color: var(--green-text); }
+.isc-media.media { color: var(--yellow-text); }
+.isc-media.baixa { color: var(--red-text); }
+
+@media (max-width: 768px) {
+  table.isc-calendario .isc-col-projeto { min-width: 160px; max-width: 190px; }
+  table.isc-calendario .isc-col-projeto .td-sub { display: none; }
+}

@@ -92,8 +92,8 @@ export async function criarCadastro(req: Request, tipo: TipoCadastro): Promise<N
   } catch (e) {
     // O banco tem indice unico no nome normalizado. Traduzir aqui evita que a
     // tela mostre a mensagem crua do Postgres.
-    if (e instanceof Error && e.message.includes("Ja existe")) {
-      throw erro(409, "NOME_DUPLICADO", `Ja existe um ${cfg.entidade} com este nome.`);
+    if (e instanceof Error && e.message.includes("Já existe")) {
+      throw erro(409, "NOME_DUPLICADO", `Já existe um ${cfg.entidade} com este nome.`);
     }
     throw e;
   }
@@ -119,7 +119,7 @@ export async function editarCadastro(req: Request, tipo: TipoCadastro): Promise<
   const id = uuid(corpo.id, "id");
 
   const antes = await um<Record<string, unknown>>(cfg.tabela, { id });
-  if (!antes) throw erro(404, "NAO_ENCONTRADO", `${cfg.entidade} nao encontrado.`);
+  if (!antes) throw erro(404, "NAO_ENCONTRADO", `${cfg.entidade} não encontrado.`);
 
   const campos: Record<string, unknown> = {};
   if ("nome" in corpo) campos.nome = textoObrigatorio(corpo.nome, "nome", 200);

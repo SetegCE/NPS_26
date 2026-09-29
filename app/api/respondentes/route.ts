@@ -35,7 +35,7 @@ const RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 function validarEmail(valor: unknown): string | null {
   const email = texto(valor, "email", { max: 200 });
   if (email && !RE_EMAIL.test(email)) {
-    throw erro(400, "EMAIL_INVALIDO", "Informe um e-mail valido.");
+    throw erro(400, "EMAIL_INVALIDO", "Informe um e-mail válido.");
   }
   return email ? email.toLowerCase() : null;
 }
@@ -140,7 +140,7 @@ export async function POST(req: Request) {
         reaproveitado: true,
         respondente: existente,
         mensagem:
-          "Ja existe um respondente com estes dados. O cadastro existente foi reaproveitado.",
+          "Já existe um respondente com estes dados. O cadastro existente foi reaproveitado.",
       });
     }
 
@@ -172,7 +172,7 @@ export async function PATCH(req: Request) {
     const id = uuid(corpo.id, "id");
 
     const antes = await um<Record<string, unknown>>("respondentes_nps", { id });
-    if (!antes) throw erro(404, "RESPONDENTE_NAO_ENCONTRADO", "Respondente nao encontrado.");
+    if (!antes) throw erro(404, "RESPONDENTE_NAO_ENCONTRADO", "Respondente não encontrado.");
 
     const campos: Record<string, unknown> = {};
     if ("nome" in corpo) campos.nome = textoObrigatorio(corpo.nome, "nome", 200);

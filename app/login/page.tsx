@@ -23,7 +23,7 @@ function FormularioLogin() {
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState<string | null>(
-    sessaoInvalida ? "Sua sessao expirou. Entre novamente." : null
+    sessaoInvalida ? "Sua sessão expirou. Entre novamente." : null
   );
   const [entrando, setEntrando] = useState(false);
 
@@ -66,7 +66,7 @@ function FormularioLogin() {
       router.refresh();
     } catch (e) {
       setErro(
-        e instanceof ErroApi ? e.message : "Falha de conexao. Verifique sua internet."
+        e instanceof ErroApi ? e.message : "Falha de conexão. Verifique sua internet."
       );
       setEntrando(false);
     }

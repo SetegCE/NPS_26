@@ -14,7 +14,7 @@ export async function POST() {
     throw erro(
       409,
       "PROJETO_VEM_DO_CLOCKRVIEW",
-      "A situacao do projeto vem do Clockrview. Altere la e sincronize."
+      "A situação do projeto vem do Clockrview. Altere lá e sincronize."
     );
   });
 }

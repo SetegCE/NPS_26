@@ -59,7 +59,7 @@ export async function buscarProjetosClockrview(): Promise<ProjetoClockrview[]> {
       signal: AbortSignal.timeout(20_000),
     });
   } catch (e) {
-    console.error("[NPS][clockrview] falha de conexao:", e);
+    console.error("[NPS][clockrview] falha de conexão:", e);
     throw erro(502, "CLOCKRVIEW_INDISPONIVEL", "Não foi possível falar com o Clockrview.");
   }
 

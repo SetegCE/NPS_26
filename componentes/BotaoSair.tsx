@@ -60,7 +60,7 @@ export function BotaoSair({
       {confirmando ? (
         <Confirmacao
           titulo="Sair do dashboard?"
-          mensagem="Tem certeza que deseja encerrar sua sessao?"
+          mensagem="Tem certeza que deseja encerrar sua sessão?"
           rotuloConfirmar="Sair"
           ocupado={saindo}
           aoConfirmar={sair}

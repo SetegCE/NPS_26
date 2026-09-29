@@ -22,7 +22,7 @@ type Entrada = { secao: string } | ItemMenu;
 const MENU_PMO: Entrada[] = [
   { secao: "Acompanhamento" },
   { rota: "/dashboard", rotulo: "Dashboard", icone: "dashboard" },
-  { rota: "/operacao-ciclo", rotulo: "Operacao do Ciclo", icone: "operacao" },
+  { rota: "/operacao-ciclo", rotulo: "Operação do Ciclo", icone: "operacao" },
   { rota: "/respostas", rotulo: "Respostas", icone: "respostas" },
   { rota: "/isc", rotulo: "ISC", icone: "isc" },
   { rota: "/planos-acao", rotulo: "Planos de Ação", icone: "plano" },
@@ -31,10 +31,9 @@ const MENU_PMO: Entrada[] = [
   { rota: "/respondentes", rotulo: "Respondentes", icone: "respondentes" },
   { rota: "/pesquisas", rotulo: "Pesquisas", icone: "pesquisas" },
   { rota: "/ciclos", rotulo: "Ciclos", icone: "ciclos" },
-  { rota: "/clientes", rotulo: "Clientes", icone: "clientes" },
-  { rota: "/lideres", rotulo: "Lideres", icone: "lideres" },
+  { rota: "/lideres", rotulo: "Líderes", icone: "lideres" },
   { secao: "Registro" },
-  { rota: "/historico", rotulo: "Historico / Auditoria", icone: "historico" },
+  { rota: "/historico", rotulo: "Histórico / Auditoria", icone: "historico" },
 ];
 
 // O lider nao ve nenhum item administrativo.
@@ -69,7 +68,7 @@ export function Sidebar({
       <aside
         className={`sidebar ${aberta ? "aberta" : ""}`}
         id="sidebar"
-        aria-label="Navegacao principal"
+        aria-label="Navegação principal"
       >
         <div className="sidebar-header">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -102,7 +101,7 @@ export function Sidebar({
             <div className="sidebar-avatar">{inicial}</div>
             <div className="sidebar-usuario-dados">
               <strong>{sessao.nome || "—"}</strong>
-              <span>{sessao.perfil === "pmo" ? "PMO" : "Lider"}</span>
+              <span>{sessao.perfil === "pmo" ? "PMO" : "Líder"}</span>
             </div>
             <BotaoSair className="sidebar-sair" titulo="Sair do sistema" aoAbrir={aoNavegar}>
               <Icone nome="sair" tamanho={17} />

@@ -95,7 +95,7 @@ export async function POST(req: Request) {
     const corpo = await lerCorpo(req);
 
     const passivel = booleano(corpo.passivel, null);
-    if (passivel === null) throw erro(400, "PASSIVEL_OBRIGATORIO", "Informe se o projeto e passivel de plano de acao.");
+    if (passivel === null) throw erro(400, "PASSIVEL_OBRIGATORIO", "Informe se o projeto é passível de plano de ação.");
 
     const resultado = await rpc<{ id: string; numero: string | null; passivel: boolean }>(
       "nps_definir_plano_acao",

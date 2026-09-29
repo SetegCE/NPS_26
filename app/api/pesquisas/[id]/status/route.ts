@@ -21,7 +21,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       { id },
       "id,status,data_envio"
     );
-    if (!antes) throw erro(404, "PESQUISA_NAO_ENCONTRADA", "Pesquisa nao encontrada.");
+    if (!antes) throw erro(404, "PESQUISA_NAO_ENCONTRADA", "Pesquisa não encontrada.");
 
     // Respondida e estado terminal: so pode ser encerrada. Sem isto, um clique
     // errado apagaria o fato de que o cliente ja respondeu.
@@ -29,7 +29,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       throw erro(
         400,
         "PESQUISA_JA_RESPONDIDA",
-        "Uma pesquisa respondida nao pode voltar de status."
+        "Uma pesquisa respondida não pode voltar de status."
       );
     }
 

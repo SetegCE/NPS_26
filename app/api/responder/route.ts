@@ -21,7 +21,7 @@ function validarToken(valor: unknown): string {
   if (!RE_TOKEN.test(t)) {
     // 404, e nao 400: um formato invalido e indistinguivel de um link que
     // nunca existiu, e nao ha motivo para informar a diferenca a quem tenta.
-    throw erro(404, "PESQUISA_NAO_ENCONTRADA", "Link de pesquisa invalido ou expirado.");
+    throw erro(404, "PESQUISA_NAO_ENCONTRADA", "Link de pesquisa inválido ou expirado.");
   }
   return t;
 }
@@ -48,7 +48,7 @@ export async function GET(req: Request) {
     const pesquisa = await um<Pesquisa>("vw_pesquisas", { token });
 
     if (!pesquisa) {
-      throw erro(404, "PESQUISA_NAO_ENCONTRADA", "Link de pesquisa invalido ou expirado.");
+      throw erro(404, "PESQUISA_NAO_ENCONTRADA", "Link de pesquisa inválido ou expirado.");
     }
     if (!pesquisa.ativo) {
       throw erro(410, "PESQUISA_ENCERRADA", "Esta pesquisa foi encerrada.");

@@ -78,7 +78,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       }),
     ]);
 
-    if (!projeto) throw erro(404, "PROJETO_NAO_ENCONTRADO", "Projeto nao encontrado.");
+    if (!projeto) throw erro(404, "PROJETO_NAO_ENCONTRADO", "Projeto não encontrado.");
 
     // Quem respondeu e quem nao respondeu.
     const responderamIds = new Set(

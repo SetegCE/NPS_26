@@ -20,7 +20,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     const cicloId = uuid(params.id, "id");
 
     const ciclo = await um<{ id: string; status: string }>("ciclos_nps", { id: cicloId });
-    if (!ciclo) throw erro(404, "CICLO_NAO_ENCONTRADO", "Ciclo nao encontrado.");
+    if (!ciclo) throw erro(404, "CICLO_NAO_ENCONTRADO", "Ciclo não encontrado.");
 
     const itens = await rpc("nps_participantes_do_ciclo", { p_ciclo_id: cicloId });
 
@@ -45,7 +45,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     // Teto explicito: sem ele, um corpo com 100 mil linhas viraria uma
     // transacao gigante no banco.
     if (corpo.itens.length > 1000) {
-      throw erro(400, "ITENS_EXCESSIVOS", "Envie no maximo 1000 projetos por vez.");
+      throw erro(400, "ITENS_EXCESSIVOS", "Envie no máximo 1000 projetos por vez.");
     }
 
     const itens = (corpo.itens as Record<string, unknown>[]).map((i, idx) => ({

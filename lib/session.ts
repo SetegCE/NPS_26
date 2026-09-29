@@ -122,7 +122,7 @@ export const getSessao = cache(async function getSessao(): Promise<SessaoPayload
     // ficaria presa. Deixar a requisicao seguir e seguro: a consulta seguinte
     // vai falhar do mesmo jeito e devolver erro de infraestrutura, que e a
     // verdade do que aconteceu.
-    console.error("[NPS][sessao] nao foi possivel revalidar a credencial:", e);
+    console.error("[NPS][sessão] não foi possível revalidar a credencial:", e);
     return sessao;
   }
 });
@@ -131,7 +131,7 @@ export const getSessao = cache(async function getSessao(): Promise<SessaoPayload
 export async function exigirSessao(): Promise<SessaoPayload> {
   const sessao = await getSessao();
   if (!sessao) {
-    throw erro(401, "NAO_AUTENTICADO", "Sessao expirada ou invalida. Entre novamente.");
+    throw erro(401, "NAO_AUTENTICADO", "Sessão expirada ou inválida. Entre novamente.");
   }
   return sessao;
 }
@@ -140,7 +140,7 @@ export async function exigirSessao(): Promise<SessaoPayload> {
 export async function exigirPmo(): Promise<SessaoPayload> {
   const sessao = await exigirSessao();
   if (sessao.perfil !== PERFIL_PMO) {
-    throw erro(403, "NAO_AUTORIZADO", "Esta acao e exclusiva do PMO.");
+    throw erro(403, "NAO_AUTORIZADO", "Esta ação é exclusiva do PMO.");
   }
   return sessao;
 }
@@ -168,10 +168,10 @@ export async function exigirAcessoAoProjeto(
     { id: projetoId },
     "id,lider_id,ativo"
   );
-  if (!projeto) throw erro(404, "PROJETO_NAO_ENCONTRADO", "Projeto nao encontrado.");
+  if (!projeto) throw erro(404, "PROJETO_NAO_ENCONTRADO", "Projeto não encontrado.");
   if (sessao.perfil === PERFIL_PMO) return projeto as unknown as Record<string, unknown>;
   if (!sessao.liderId || projeto.lider_id !== sessao.liderId) {
-    throw erro(403, "NAO_AUTORIZADO", "Voce so tem acesso aos projetos sob sua responsabilidade.");
+    throw erro(403, "NAO_AUTORIZADO", "Você só tem acesso aos projetos sob sua responsabilidade.");
   }
   return projeto as unknown as Record<string, unknown>;
 }

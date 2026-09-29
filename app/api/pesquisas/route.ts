@@ -117,7 +117,7 @@ export async function POST(req: Request) {
       return json(
         {
           erro: "PESQUISA_DUPLICADA",
-          mensagem: "Ja existe uma pesquisa para este projeto e respondente neste ciclo.",
+          mensagem: "Já existe uma pesquisa para este projeto e respondente neste ciclo.",
           pesquisa: semToken,
           link: montarLinkDaPesquisa(req, token),
         },

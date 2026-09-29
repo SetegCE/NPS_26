@@ -16,7 +16,7 @@ const SITUACOES = ["no_prazo", "concluido", "atrasado"] as const;
 function evidencia(valor: unknown): string | null {
   const v = texto(valor, "evidencia_url", { max: 1000 });
   if (v && !/^https?:\/\/\S+$/i.test(v)) {
-    throw erro(400, "EVIDENCIA_INVALIDA", "A evidencia deve ser um link que comece com http:// ou https://.");
+    throw erro(400, "EVIDENCIA_INVALIDA", "A evidência deve ser um link que comece com http:// ou https://.");
   }
   return v;
 }
@@ -29,7 +29,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     const ehLider = sessao.perfil === PERFIL_LIDER;
     if (ehLider && !sessao.liderId) {
-      throw erro(403, "NAO_AUTORIZADO", "Sua conta nao esta vinculada a um lider.");
+      throw erro(403, "NAO_AUTORIZADO", "Sua conta não está vinculada a um líder.");
     }
     const ator = {
       p_ator: sessao.nome,

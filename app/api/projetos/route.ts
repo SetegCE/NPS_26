@@ -111,7 +111,7 @@ export async function POST() {
     throw erro(
       410,
       "PROJETO_VEM_DO_CLOCKRVIEW",
-      "Projetos sao cadastrados no Clockrview. Use \"Sincronizar com Clockrview\" na tela de Projetos."
+      "Projetos são cadastrados no Clockrview. Use \"Sincronizar com Clockrview\" na tela de Projetos."
     );
   });
 }
@@ -125,7 +125,7 @@ export async function PATCH(req: Request) {
     const id = uuid(corpo.id, "id");
 
     const antes = await um<Record<string, unknown>>("projetos_mestre_nps", { id });
-    if (!antes) throw erro(404, "PROJETO_NAO_ENCONTRADO", "Projeto nao encontrado.");
+    if (!antes) throw erro(404, "PROJETO_NAO_ENCONTRADO", "Projeto não encontrado.");
 
     // O lider NAO e alterado por aqui: exige o fluxo com historico, em
     // POST /api/projetos/:id/lider, para que a troca fique registrada.
@@ -135,7 +135,7 @@ export async function PATCH(req: Request) {
       throw erro(
         400,
         "USE_ENDPOINT_DE_LIDER",
-        "Use POST /api/projetos/:id/lider para trocar o lider."
+        "Use POST /api/projetos/:id/lider para trocar o líder."
       );
     }
 
@@ -146,7 +146,7 @@ export async function PATCH(req: Request) {
       throw erro(
         400,
         "CAMPO_DO_CLOCKRVIEW",
-        `${doClockrview.join(", ")} vem do Clockrview e nao e editado no NPS.`
+        `${doClockrview.join(", ")} vem do Clockrview e não é editado no NPS.`
       );
     }
 
@@ -166,7 +166,7 @@ export async function PATCH(req: Request) {
       campos.status = umDe(corpo.status, STATUS_PROJETO, "status", { obrigatorio: true });
 
     if (!Object.keys(campos).length) {
-      throw erro(400, "NADA_A_ALTERAR", "Nenhum campo valido foi informado.");
+      throw erro(400, "NADA_A_ALTERAR", "Nenhum campo válido foi informado.");
     }
 
     const [depois] = await atualizar<Record<string, unknown>[]>(

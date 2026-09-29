@@ -55,7 +55,7 @@ export function classificacaoNps(nps: number | null): string {
   if (nps >= 75) return "Excelencia";
   if (nps >= 50) return "Qualidade";
   if (nps >= 1) return "Aperfeicoamento";
-  return "Zona Critica";
+  return "Zona Crítica";
 }
 
 export function corDoNps(nps: number | null): string {

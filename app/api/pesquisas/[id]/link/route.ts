@@ -27,10 +27,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       ativo: boolean;
     }>("vw_pesquisas", { id }, "id,token,lider_id,ativo");
 
-    if (!pesquisa) throw erro(404, "PESQUISA_NAO_ENCONTRADA", "Pesquisa nao encontrada.");
+    if (!pesquisa) throw erro(404, "PESQUISA_NAO_ENCONTRADA", "Pesquisa não encontrada.");
 
     if (sessao.perfil === PERFIL_LIDER && pesquisa.lider_id !== sessao.liderId) {
-      throw erro(403, "NAO_AUTORIZADO", "Esta pesquisa nao pertence aos seus projetos.");
+      throw erro(403, "NAO_AUTORIZADO", "Esta pesquisa não pertence aos seus projetos.");
     }
     if (!pesquisa.ativo) throw erro(400, "PESQUISA_ENCERRADA", "Esta pesquisa foi encerrada.");
 

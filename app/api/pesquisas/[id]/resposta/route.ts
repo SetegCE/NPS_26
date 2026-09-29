@@ -29,9 +29,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       { id },
       "id,lider_id"
     );
-    if (!pesquisa) throw erro(404, "PESQUISA_NAO_ENCONTRADA", "Pesquisa nao encontrada.");
+    if (!pesquisa) throw erro(404, "PESQUISA_NAO_ENCONTRADA", "Pesquisa não encontrada.");
     if (sessao.perfil === PERFIL_LIDER && pesquisa.lider_id !== sessao.liderId) {
-      throw erro(403, "NAO_AUTORIZADO", "Esta pesquisa nao pertence aos seus projetos.");
+      throw erro(403, "NAO_AUTORIZADO", "Esta pesquisa não pertence aos seus projetos.");
     }
 
     const { dados } = await selecionar<Resposta[]>("respostas_nps", {

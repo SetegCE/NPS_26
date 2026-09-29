@@ -14,9 +14,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     const id = uuid(params.id, "id");
 
     const plano = await um<Record<string, unknown> & { lider_id: string | null }>("vw_planos_acao", { id });
-    if (!plano) throw erro(404, "PLANO_NAO_ENCONTRADO", "Plano de acao nao encontrado.");
+    if (!plano) throw erro(404, "PLANO_NAO_ENCONTRADO", "Plano de ação não encontrado.");
     if (sessao.perfil === PERFIL_LIDER && plano.lider_id !== sessao.liderId) {
-      throw erro(403, "NAO_AUTORIZADO", "Este plano nao pertence aos seus projetos.");
+      throw erro(403, "NAO_AUTORIZADO", "Este plano não pertence aos seus projetos.");
     }
 
     const { dados: acoes } = await selecionar("vw_plano_acao_itens", {

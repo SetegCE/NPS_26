@@ -287,7 +287,7 @@ export function TelaOperacao({ sessao }: { sessao: Sessao }) {
 
 /**
  * Cada cartao significa uma coisa diferente, e a distincao e o ponto:
- * projetos elegiveis != projetos respondidos != respondentes != respostas.
+ * projetos elegiveis != projetos respondidos != respostas.
  */
 function Indicadoresk({ i }: { i: Indicadores }) {
   const cartoes: { rotulo: string; valor: React.ReactNode; detalhe: string; classe?: string }[] = [
@@ -305,11 +305,6 @@ function Indicadoresk({ i }: { i: Indicadores }) {
       rotulo: "Cobertura",
       valor: `${i.cobertura}%`,
       detalhe: "projetos respondidos / elegíveis",
-    },
-    {
-      rotulo: "Respondentes",
-      valor: i.respondentes,
-      detalhe: "pessoas distintas que participaram",
     },
     { rotulo: "Respostas", valor: i.respostas, detalhe: "avaliações de projeto recebidas" },
     {

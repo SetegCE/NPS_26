@@ -29,7 +29,7 @@ const RE_CONTROLE = new RegExp("[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]",
 export function uuid(valor: unknown, campo: string): string {
   const v = String(valor ?? "").trim();
   if (!RE_UUID.test(v)) {
-    throw erro(400, "ID_INVALIDO", `Campo "${campo}" nao e um identificador valido.`);
+    throw erro(400, "ID_INVALIDO", `Campo "${campo}" não é um identificador válido.`);
   }
   return v;
 }
@@ -48,7 +48,7 @@ export function texto(
   let v = valor === undefined || valor === null ? "" : String(valor);
   v = v.replace(RE_CONTROLE, "").trim();
   if (!v) {
-    if (obrigatorio) throw erro(400, "CAMPO_OBRIGATORIO", `Campo "${campo}" e obrigatorio.`);
+    if (obrigatorio) throw erro(400, "CAMPO_OBRIGATORIO", `Campo "${campo}" é obrigatório.`);
     return null;
   }
   if (v.length > max) {
@@ -68,7 +68,7 @@ export function nota(
   { obrigatorio = false }: { obrigatorio?: boolean } = {}
 ): number | null {
   if (valor === undefined || valor === null || valor === "") {
-    if (obrigatorio) throw erro(400, "CAMPO_OBRIGATORIO", `Campo "${campo}" e obrigatorio.`);
+    if (obrigatorio) throw erro(400, "CAMPO_OBRIGATORIO", `Campo "${campo}" é obrigatório.`);
     return null;
   }
   // Booleano fica de fora explicitamente: `Number(true)` e 1, entao um corpo
@@ -118,7 +118,7 @@ export function competencia(
   }
   const mes = Number(m[2]);
   if (mes < 1 || mes > 12) {
-    throw erro(400, "COMPETENCIA_INVALIDA", "Mes da competencia invalido.");
+    throw erro(400, "COMPETENCIA_INVALIDA", "Mês da competência inválido.");
   }
   return `${m[1]}-${m[2]}-01`;
 }
@@ -161,7 +161,7 @@ export function dataOpcional(valor: unknown, campo: string): string | null {
   const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   const d = m ? new Date(`${v}T00:00:00Z`) : null;
   if (!m || !d || Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== v) {
-    throw erro(400, "DATA_INVALIDA", `Campo "${campo}" deve ser uma data valida (AAAA-MM-DD).`);
+    throw erro(400, "DATA_INVALIDA", `Campo "${campo}" deve ser uma data válida (AAAA-MM-DD).`);
   }
   return v;
 }
