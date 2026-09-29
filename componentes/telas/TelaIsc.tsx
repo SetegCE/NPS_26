@@ -214,7 +214,7 @@ export function TelaIsc({ sessao }: { sessao: Sessao }) {
     <>
       <CabecalhoTela
         titulo={
-          ehPmo ? "ISC — Índice de Satisfação do Cliente" : "ISC — Percepção mensal dos meus projetos"
+          ehPmo ? "ISC - Índice de Satisfação do Cliente" : "ISC - Percepção mensal dos meus projetos"
         }
         descricao="Nota interna de 0 a 10 atribuída pelo líder, mês a mês. Não altera nem compõe o NPS."
         acoes={
