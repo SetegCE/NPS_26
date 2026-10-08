@@ -148,9 +148,11 @@ export function TelaProjetos({
       render: (l) => (
         <>
           {/* Link de verdade, e nao um botao que empurra o historico a mao:
-              abre em nova aba com o meio do mouse e pode ser compartilhado. */}
+              abre em nova aba com o meio do mouse e pode ser compartilhado.
+              O lider vai para /meus-projetos/[id]: /projetos e prefixo so do
+              PMO no middleware e devolveria ele para o dashboard. */}
           <Link
-            href={`/projetos/${l.id}`}
+            href={`${somenteMeus ? "/meus-projetos" : "/projetos"}/${l.id}`}
             className="btn-acoes"
             title="Ver detalhes do projeto"
             aria-label="Ver detalhes do projeto"

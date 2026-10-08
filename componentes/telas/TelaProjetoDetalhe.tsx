@@ -115,15 +115,16 @@ export function TelaProjetoDetalhe({ id, sessao }: { id: string; sessao: Sessao 
     { chave: "respostas", rotulo: "Respostas", contador: d.respostas.length },
     { chave: "ciclos", rotulo: "Ciclos", contador: d.ciclos.length },
     { chave: "lideranca", rotulo: "Liderança", contador: d.lideranca.length },
-    { chave: "historico", rotulo: "Histórico", contador: d.auditoria.length },
+    // Auditoria e prerrogativa do PMO; a API nem a devolve ao lider.
+    ...(ehPmo ? [{ chave: "historico" as Aba, rotulo: "Histórico", contador: d.auditoria.length }] : []),
   ];
 
   return (
     <>
       <div className="view-header">
         <div>
-          <Link href="/projetos" className="btn-mini">
-            &larr; Projetos
+          <Link href={ehPmo ? "/projetos" : "/meus-projetos"} className="btn-mini">
+            &larr; {ehPmo ? "Projetos" : "Meus Projetos"}
           </Link>
           <h1 style={{ marginTop: 8 }}>{p.nome}</h1>
           <p>
@@ -166,7 +167,7 @@ export function TelaProjetoDetalhe({ id, sessao }: { id: string; sessao: Sessao 
         {aba === "respostas" ? <AbaRespostas d={d} /> : null}
         {aba === "ciclos" ? <AbaCiclos d={d} /> : null}
         {aba === "lideranca" ? <AbaLideranca d={d} /> : null}
-        {aba === "historico" ? <AbaAuditoria d={d} /> : null}
+        {aba === "historico" && ehPmo ? <AbaAuditoria d={d} /> : null}
       </div>
 
       {editando ? (

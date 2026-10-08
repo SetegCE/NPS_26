@@ -4,7 +4,7 @@
 
 import { erro, json, rotaApi, uuid } from "@/lib/http";
 import { selecionar, um } from "@/lib/db";
-import { exigirAcessoAoProjeto, exigirSessao } from "@/lib/session";
+import { chaveDoEscopo, escopoDoLider, exigirAcessoAoProjeto, exigirSessao, PERFIL_LIDER } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -45,7 +45,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         filtros: { projeto_id: id },
         ordem: { campo: "data_geracao", ascending: false },
       }),
-      selecionar<{ respondente_id: string | null }[]>("vw_respostas_enriquecidas", {
+      selecionar<{ respondente_id: string | null; projeto_id: string | null; ciclo: string | null }[]>("vw_respostas_enriquecidas", {
         colunas: "*",
         filtros: { projeto_id: id },
         ordem: { campo: "timestamp", ascending: false },
@@ -80,9 +80,17 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
     if (!projeto) throw erro(404, "PROJETO_NAO_ENCONTRADO", "Projeto não encontrado.");
 
+    // O lider so ve as respostas dos ciclos em que ele era o lider — a mesma
+    // regra da aba Respostas (escopoDoLider). Sem isto, quem herda um projeto
+    // veria aqui as notas colhidas sob o lider anterior.
+    const escopo = await escopoDoLider(sessao);
+    const respostasVisiveis = (respostas.dados || []).filter(
+      (r) => escopo === null || escopo.pares.has(chaveDoEscopo(r.projeto_id, r.ciclo))
+    );
+
     // Quem respondeu e quem nao respondeu.
     const responderamIds = new Set(
-      (respostas.dados || []).map((r) => r.respondente_id).filter(Boolean)
+      respostasVisiveis.map((r) => r.respondente_id).filter(Boolean)
     );
     const vinculos = (respondentes.dados || []).map((v) => ({
       ...v,
@@ -93,12 +101,13 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       projeto,
       respondentes: vinculos,
       pesquisas: pesquisas.dados || [],
-      respostas: respostas.dados || [],
+      respostas: respostasVisiveis,
       lideranca: liderancas.dados || [],
       ciclos: participacoes.dados || [],
       transicoes: transicoes.dados || [],
       isc: iscs.dados || [],
-      auditoria: auditoria.dados || [],
+      // Trilha de auditoria e exclusiva do PMO (ver /api/auditoria em lib/rotas.ts).
+      auditoria: sessao.perfil === PERFIL_LIDER ? [] : auditoria.dados || [],
     });
   });
 }

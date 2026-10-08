@@ -101,6 +101,13 @@ describe("o que o líder precisa alcançar", () => {
       assert.equal(ehSoPmo(tela), false, tela);
     }
   });
+
+  // O olho de "Meus Projetos" apontava para /projetos/[id], prefixo do PMO, e
+  // o líder caía de volta no dashboard sem ver o detalhe.
+  test("o detalhe do projeto do líder passa; o do PMO continua barrado", () => {
+    assert.equal(ehSoPmo("/meus-projetos/3f1c2a9e-0000-4000-8000-000000000000"), false);
+    assert.equal(ehSoPmo("/projetos/3f1c2a9e-0000-4000-8000-000000000000"), true);
+  });
 });
 
 describe("o que o líder não pode alcançar", () => {
