@@ -13,7 +13,8 @@
     "sincronizar:agendado": "node scripts/sincronizar-projetos-agendado.mjs",
     "comparar:motores": "node --import ./tests/alias.mjs scripts/comparar-motores.mjs",
     "banco:exportar": "node scripts/exportar-dados.mjs",
-    "banco:restaurar": "node scripts/restaurar-banco.mjs"
+    "banco:restaurar": "node scripts/restaurar-banco.mjs",
+    "banco:migration": "node scripts/aplicar-migration.mjs"
   },
   "dependencies": {
     "jose": "^6.2.8",

@@ -6,6 +6,7 @@
 //      migration 21             (evidencia da acao concluida)
 //      migration 22             (exclusao pela direcao)
 //      migration 23             (um link por pessoa no ciclo)
+//      migration 24             (link so com elegiveis; canal EMAIL)
 //   3. arquivo de dados         (gerado por scripts/exportar-dados.mjs)
 //
 // Converte para o schema do .env (DATABASE_SCHEMA, ex. "nps") em memoria e
@@ -53,6 +54,7 @@ const etapas = [
   ["evidência da ação (migration 21)", converterEstrutura(ler("supabase/migrations/21_evidencia_da_acao.sql"), schema).sql],
   ["exclusão pela direção (migration 22)", converterEstrutura(ler("supabase/migrations/22_exclusao_pela_direcao.sql"), schema).sql],
   ["link único por pessoa (migration 23)", converterEstrutura(ler("supabase/migrations/23_link_unico_por_pessoa.sql"), schema).sql],
+  ["link só com elegíveis (migration 24)", converterEstrutura(ler("supabase/migrations/24_link_elegiveis_e_canal_email.sql"), schema).sql],
   ["dados", dados],
 ];
 
