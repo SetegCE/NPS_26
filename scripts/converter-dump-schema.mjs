@@ -48,6 +48,10 @@ export function converterEstrutura(texto, schema = "nps") {
   // nao existem e o GRANT/REVOKE falha. Saem da lista; se sobrar ninguem, a
   // linha vira comentario (no servidor so o app acessa o banco).
   const PAPEIS_SUPABASE = /\b(anon|authenticated|service_role)\b/i;
+  // GRANT/REVOKE quebrado em varias linhas vira uma linha so antes do
+  // tratamento, que e por linha: sem isto o "from anon, authenticated" da
+  // linha de baixo escapava e a migration 25 falhou no servidor.
+  sql = sql.replace(/^[ \t]*(?:grant|revoke)\b[^;]*;/gim, (cmd) => cmd.replace(/\s*\n\s*/g, " "));
   sql = sql
     .split("\n")
     .map((l) => {

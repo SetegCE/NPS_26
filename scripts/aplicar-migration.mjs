@@ -37,6 +37,9 @@ const cliente = new pg.Client({
 await cliente.connect();
 try {
   await cliente.query("begin");
+  // Tabela sem prefixo ("from respostas_nps") precisa achar o schema do NPS:
+  // a conversao so troca o que vem escrito "public.".
+  await cliente.query(`set local search_path to ${schema}, extensions, public`);
   await cliente.query(sql);
   await cliente.query("commit");
 } catch (e) {
