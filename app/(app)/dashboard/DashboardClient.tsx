@@ -250,7 +250,20 @@ export function DashboardClient({ sessao }: { sessao: Sessao }) {
     () => filtrarRespostas(respostas, filtros),
     [respostas, filtros]
   );
-  const projetosEscopo = useMemo(() => filtrarProjetos(projetos, filtros), [projetos, filtros]);
+  // Universo da cobertura: so quem e ELEGIVEL no ciclo, como na tela de
+  // Operacao. Projeto ativo mas nao elegivel (stand by, menos de 3 meses...)
+  // nao entra no total nem conta como respondido se alguem o avaliar — no
+  // 2026.2 o card dividia por 56 ativos em vez dos 43 elegiveis. Nulo conta
+  // como elegivel, que e o padrao do banco. A lista completa continua nas
+  // opcoes dos filtros.
+  const projetosElegiveis = useMemo(
+    () => projetos.filter((p) => p.elegivel !== false),
+    [projetos]
+  );
+  const projetosEscopo = useMemo(
+    () => filtrarProjetos(projetosElegiveis, filtros),
+    [projetosElegiveis, filtros]
+  );
   const metricas = useMemo(
     () => calcularMetricas(respostasFiltradas, projetosEscopo),
     [respostasFiltradas, projetosEscopo]
@@ -308,7 +321,7 @@ export function DashboardClient({ sessao }: { sessao: Sessao }) {
         {
           getDadosFiltrados: () => respostasFiltradas,
           getDadosProcessados: () => respostas,
-          getDadosProjetos: () => projetos,
+          getDadosProjetos: () => projetosElegiveis,
           // O relatorio herdou este parametro de quando havia uma tabela de
           // projetos embutida no codigo. Ela nao existe mais: projeto,
           // cliente e lider vem todos do banco. O PDF so o usava como
@@ -561,7 +574,7 @@ export function DashboardClient({ sessao }: { sessao: Sessao }) {
         >
           <Comparativo
             respostas={respostas}
-            projetos={projetos}
+            projetos={projetosElegiveis}
             ciclosComparados={ciclosComparados}
           />
         </Painel>
@@ -579,7 +592,7 @@ export function DashboardClient({ sessao }: { sessao: Sessao }) {
           >
             <IncidenciaComparativa
               respostas={respostas}
-              projetos={projetos}
+              projetos={projetosElegiveis}
               filtros={filtros}
               anterior={cicloAnterior}
               atual={cicloAtual}
