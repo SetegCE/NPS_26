@@ -277,6 +277,20 @@ describe("calcularMetricas", () => {
     assert.equal(m.percentualProjetos, 25);
   });
 
+  test("resposta com codigo antigo conta pelo projeto_id e ciclo_id", () => {
+    // O Clockrview corrigiu o codigo do projeto depois da resposta: a resposta
+    // guarda "CK-ANTIGO", a participacao no ciclo ja tem "CK-NOVO".
+    const ps = comLiderAtual([
+      projeto({ codigo_clockify: "CK-NOVO", projeto_id: "p-1", ciclo_id: "c-1" }),
+    ]);
+    const rs = processarRespostas(
+      [resposta({ codigo_clockify: "CK-ANTIGO", projeto_id: "p-1", ciclo_id: "c-1" })],
+      ps
+    );
+    assert.equal(rs[0].semProjeto, false);
+    assert.equal(calcularMetricas(rs, ps).projetosRespondidos, 1);
+  });
+
   test("a mesma pessoa avaliando dois projetos e UM respondente", () => {
     const rs = processar([
       resposta({ id: "1", codigo_clockify: "CK-1", respondente_id: "p1" }),

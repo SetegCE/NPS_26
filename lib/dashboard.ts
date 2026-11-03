@@ -136,6 +136,11 @@ export function chaveDoProjeto(item: {
 
 export const chaveValida = (k: string) => Boolean(k) && k !== "||";
 
+/** Chave pelos ids: projeto_id + ciclo_id. Nula se faltar um dos dois. */
+function chaveDosIds(item: { projeto_id?: unknown; ciclo_id?: unknown }): string | null {
+  return item.projeto_id && item.ciclo_id ? `${item.ciclo_id}||${item.projeto_id}` : null;
+}
+
 function paraNota(valor: unknown): number | null {
   if (valor === null || valor === undefined || valor === "") return null;
   const n = Number(valor);
@@ -255,9 +260,18 @@ export function processarRespostas(
   projetos: Projeto[]
 ): Resposta[] {
   const indice = new Map<string, Projeto>();
+  // Vinculo pelos ids (projeto_id + ciclo_id), que nao mudam. O codigo
+  // Clockify muda quando a sincronizacao com o Clockrview o corrige, e a
+  // resposta guarda o codigo do dia em que foi respondida: casando so pelo
+  // codigo, a resposta continuava no banco mas nao contava como projeto
+  // respondido. O codigo fica como segunda tentativa, para as respostas
+  // antigas que nao tem projeto_id.
+  const indicePorId = new Map<string, Projeto>();
   for (const p of projetos) {
     const chave = chaveDoProjeto(p);
     if (chaveValida(chave) && !indice.has(chave)) indice.set(chave, p);
+    const chaveId = chaveDosIds(p);
+    if (chaveId && !indicePorId.has(chaveId)) indicePorId.set(chaveId, p);
   }
 
   return brutas.map((row) => {
@@ -271,7 +285,10 @@ export function processarRespostas(
     const canal = canalDaResposta({ canal_resposta: row.canal_resposta });
 
     const chave = chaveDoProjeto({ ciclo, codigo_clockify: row.codigo_clockify });
-    const pm = row.codigo_clockify && chaveValida(chave) ? indice.get(chave) || null : null;
+    const chaveId = chaveDosIds(row);
+    const pm =
+      (chaveId ? indicePorId.get(chaveId) : null) ||
+      (row.codigo_clockify && chaveValida(chave) ? indice.get(chave) || null : null);
 
     // Resposta sem vinculo com projeto cai no que a propria linha de
     // respostas_nps trouxer. Tambem e banco — nao ha mais nenhuma tabela de
