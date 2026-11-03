@@ -30,15 +30,21 @@ const projetos = comLiderAtual(
 const brutas = (await c.query(`select * from respostas_nps where ciclo = $1`, [ciclo])).rows;
 await c.end();
 
+// A mesma regra do DashboardClient: so projeto ELEGIVEL no ciclo, e so
+// resposta de projeto elegivel.
 const respostas = processarRespostas(brutas, projetos).filter((r) => r.ciclo === ciclo);
 const doCiclo = projetos.filter((p) => p.ciclo === ciclo);
-const m = calcularMetricas(respostas, doCiclo);
+const elegiveis = doCiclo.filter((p) => p.elegivel !== false);
+const respostasElegiveis = respostas.filter((r) => r.projetoElegivel);
+const m = calcularMetricas(respostasElegiveis, elegiveis);
 
 const comIds = brutas.filter((r) => r.projeto_id && r.ciclo_id).length;
 console.log(`
 Ciclo ${ciclo}
   respostas no banco ............ ${brutas.length}  (com projeto_id e ciclo_id: ${comIds})
   respostas ligadas a projeto ... ${respostas.filter((r) => !r.semProjeto).length}
+  projetos ativos / elegiveis ... ${doCiclo.length} / ${elegiveis.length}
+  respostas que contam (NPS) .... ${m.respostasValidas}   NPS ${m.nps}
   projetos respondidos .......... ${m.projetosRespondidos} / ${m.totalProjetos}  (${m.percentualProjetos}%)
 `);
 const soltas = respostas.filter((r) => r.semProjeto);
