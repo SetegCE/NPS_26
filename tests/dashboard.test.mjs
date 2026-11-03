@@ -313,6 +313,22 @@ describe("calcularMetricas", () => {
     assert.equal(calcularMetricas(rs, ps).projetosRespondidos, 1);
   });
 
+  test("resposta marca se o projeto e elegivel no ciclo", () => {
+    const ps = comLiderAtual([
+      projeto({ codigo_clockify: "CK-1" }),
+      projeto({ codigo_clockify: "CK-9", elegivel: false }),
+    ]);
+    const rs = processarRespostas(
+      [
+        resposta({ id: "1", codigo_clockify: "CK-1" }),
+        resposta({ id: "2", codigo_clockify: "CK-9" }),
+        resposta({ id: "3", codigo_clockify: "CK-INEXISTENTE" }),
+      ],
+      ps
+    );
+    assert.deepEqual(rs.map((r) => r.projetoElegivel), [true, false, false]);
+  });
+
   test("a mesma pessoa avaliando dois projetos e UM respondente", () => {
     const rs = processar([
       resposta({ id: "1", codigo_clockify: "CK-1", respondente_id: "p1" }),

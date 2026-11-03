@@ -73,7 +73,9 @@ export async function GET(req: Request) {
       });
     }
 
-    const filtrosResp: Record<string, FiltroValor> = { projeto_id: idsProjetos };
+    // So respostas de ciclos em que o projeto era elegivel (migration 25):
+    // sem ciclo no filtro, entrariam as de um ciclo em que ele nao era.
+    const filtrosResp: Record<string, FiltroValor> = { projeto_id: idsProjetos, elegivel_no_ciclo: true };
     if (cicloId) filtrosResp.ciclo_id = cicloId;
 
     const competencia = competenciaAtual();

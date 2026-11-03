@@ -35,6 +35,7 @@ interface RegistroIsc {
 interface RespostaCliente {
   projeto_id: string;
   nota_q4: number | string | null;
+  elegivel_no_ciclo?: boolean | null;
   [chave: string]: unknown;
 }
 
@@ -79,7 +80,7 @@ export async function GET(req: Request) {
         ordem: { campo: "competencia", ascending: false },
       }),
       selecionar<RespostaCliente[]>("vw_respostas_enriquecidas", {
-        colunas: "projeto_id,nota_q4,categoria,timestamp,respondente_nome,feedback",
+        colunas: "projeto_id,nota_q4,categoria,timestamp,respondente_nome,feedback,elegivel_no_ciclo",
         filtros: { projeto_id: ids },
         ordem: { campo: "timestamp", ascending: false },
       }),
@@ -103,7 +104,9 @@ export async function GET(req: Request) {
       const historico = iscPorProjeto.get(p.id) || [];
       const avaliacoes = respPorProjeto.get(p.id) || [];
       const notasIsc = historico.map((h) => Number(h.nota)).filter((n) => Number.isFinite(n));
+      // So entra na media resposta de ciclo em que o projeto era elegivel.
       const notasQ4 = avaliacoes
+        .filter((r) => r.elegivel_no_ciclo !== false)
         .map((r) => (r.nota_q4 === null || r.nota_q4 === undefined ? NaN : Number(r.nota_q4)))
         .filter((n) => Number.isFinite(n) && n >= 0 && n <= 10);
       return {

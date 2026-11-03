@@ -99,6 +99,10 @@ describe("token de sessao", () => {
 describe("recorte do lider na operacao do ciclo", () => {
   const query = (obj = {}) => new URLSearchParams(obj);
 
+  test("projeto retirado do ciclo nao entra na operacao", () => {
+    assert.equal(montarFiltrosOperacao(query(), SESSAO_PMO).participacao_ativa, true);
+  });
+
   test("o lider e sempre filtrado pelo proprio id", () => {
     const f = montarFiltrosOperacao(query(), SESSAO_LIDER);
     assert.equal(f.lider_id, ID_JULIANA);

@@ -9,6 +9,7 @@
 import { json, ordenacao, paginacao, rotaApi, umDe, uuidOpcional } from "@/lib/http";
 import { type FiltroValor, selecionar, termoBusca } from "@/lib/db";
 import { chaveDoEscopo, escopoDoLider, exigirSessao, PERFIL_LIDER } from "@/lib/session";
+import { contaNaConta } from "@/lib/resumo";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,6 +24,7 @@ interface Resposta extends Record<string, unknown> {
   nota_q4: number | null;
   categoria: string | null;
   resposta_valida: boolean;
+  elegivel_no_ciclo?: boolean | null;
 }
 
 export async function GET(req: Request) {
@@ -76,9 +78,10 @@ export async function GET(req: Request) {
   });
 }
 
-/** Total, validas e NPS (% promotores - % detratores) do recorte. */
+/** Total, validas e NPS (% promotores - % detratores) do recorte. A lista
+ *  mostra tudo; a conta, so resposta de projeto elegivel no ciclo. */
 function resumir(linhas: Resposta[]) {
-  const validas = linhas.filter((r) => r.resposta_valida);
+  const validas = linhas.filter(contaNaConta);
   const promotores = validas.filter((r) => r.categoria === "PROMOTOR").length;
   const neutros = validas.filter((r) => r.categoria === "NEUTRO").length;
   const detratores = validas.filter((r) => r.categoria === "DETRATOR").length;

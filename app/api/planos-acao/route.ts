@@ -64,6 +64,7 @@ export async function GET(req: Request) {
             colunas: "projeto_id,ciclo_id,ciclo,codigo_clockify,projeto_nome,cliente_nome,lider_ciclo,respostas",
             filtros: {
               elegivel: true,
+              participacao_ativa: true,
               respostas: { op: "gt", valor: 0 },
               ...(ciclo ? { ciclo_id: ciclo } : {}),
             },

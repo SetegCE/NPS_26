@@ -21,7 +21,8 @@ export function montarFiltrosOperacao(
   query: URLSearchParams,
   sessao: SessaoPayload
 ): Record<string, FiltroValor> | null {
-  const filtros: Record<string, FiltroValor> = { projeto_ativo: true };
+  // participacao_ativa: projeto retirado do ciclo nao conta (migration 25).
+  const filtros: Record<string, FiltroValor> = { projeto_ativo: true, participacao_ativa: true };
 
   if (sessao.perfil === PERFIL_LIDER) {
     if (!sessao.liderId) return null;

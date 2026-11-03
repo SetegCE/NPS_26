@@ -7,6 +7,8 @@
 
 export interface RespostaResumivel {
   resposta_valida?: boolean | null;
+  /** Projeto elegivel no ciclo da resposta (migration 25). */
+  elegivel_no_ciclo?: boolean | null;
   categoria?: string | null;
   respondente_id?: string | null;
   projeto_id?: string | null;
@@ -27,12 +29,19 @@ export interface Resumo {
   medias: { Q1: number | null; Q2: number | null; Q3: number | null; Q4: number | null };
 }
 
+/** A resposta entra nas contas? Valida e de projeto elegivel no ciclo. */
+export function contaNaConta(r: Pick<RespostaResumivel, "resposta_valida" | "elegivel_no_ciclo">): boolean {
+  return Boolean(r.resposta_valida) && r.elegivel_no_ciclo !== false;
+}
+
 type CampoNota = "nota_q1" | "nota_q2" | "nota_q3" | "nota_q4";
 
 export function resumirRespostas(respostas: RespostaResumivel[]): Resumo {
   // `resposta_valida` vem da view: e ela que decide o que entra na conta
-  // (resposta sem Q4, por exemplo, nao e avaliacao de NPS).
-  const validas = respostas.filter((r) => r.resposta_valida);
+  // (resposta sem Q4, por exemplo, nao e avaliacao de NPS). E so conta
+  // resposta de projeto elegivel no ciclo; a de projeto nao elegivel continua
+  // na lista, mas fora da conta.
+  const validas = respostas.filter(contaNaConta);
   const promotores = validas.filter((r) => r.categoria === "PROMOTOR").length;
   const neutros = validas.filter((r) => r.categoria === "NEUTRO").length;
   const detratores = validas.filter((r) => r.categoria === "DETRATOR").length;

@@ -38,6 +38,16 @@ describe("resumirRespostas", () => {
     assert.equal(s.detratores, 0);
   });
 
+  test("resposta de projeto nao elegivel no ciclo fica fora da conta", () => {
+    const s = resumirRespostas([
+      r({ categoria: "PROMOTOR", elegivel_no_ciclo: true }),
+      r({ categoria: "DETRATOR", elegivel_no_ciclo: false, respondente_id: "p2" }),
+    ]);
+    assert.equal(s.respostas, 1);
+    assert.equal(s.respondentes, 1);
+    assert.equal(s.nps, 100);
+  });
+
   test("promotores menos detratores, em porcentagem", () => {
     const s = resumirRespostas([
       r({ categoria: "PROMOTOR", respondente_id: "a" }),

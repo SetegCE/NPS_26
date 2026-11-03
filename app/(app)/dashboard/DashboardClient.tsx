@@ -246,9 +246,16 @@ export function DashboardClient({ sessao }: { sessao: Sessao }) {
     ciclosComparados[ciclosComparados.length - 1] ?? "",
   ];
 
+  // So resposta de projeto elegivel no ciclo entra no painel: NPS, categorias,
+  // respondentes, canais, tabela e PDF. A de projeto nao elegivel continua
+  // gravada e aparece na tela de Respostas, fora das contas.
+  const respostasElegiveis = useMemo(
+    () => respostas.filter((r) => r.projetoElegivel),
+    [respostas]
+  );
   const respostasFiltradas = useMemo(
-    () => filtrarRespostas(respostas, filtros),
-    [respostas, filtros]
+    () => filtrarRespostas(respostasElegiveis, filtros),
+    [respostasElegiveis, filtros]
   );
   // Universo da cobertura: so quem e ELEGIVEL no ciclo, como na tela de
   // Operacao. Projeto ativo mas nao elegivel (stand by, menos de 3 meses...)
@@ -320,7 +327,7 @@ export function DashboardClient({ sessao }: { sessao: Sessao }) {
       await exportarPDF(
         {
           getDadosFiltrados: () => respostasFiltradas,
-          getDadosProcessados: () => respostas,
+          getDadosProcessados: () => respostasElegiveis,
           getDadosProjetos: () => projetosElegiveis,
           // O relatorio herdou este parametro de quando havia uma tabela de
           // projetos embutida no codigo. Ela nao existe mais: projeto,
@@ -573,7 +580,7 @@ export function DashboardClient({ sessao }: { sessao: Sessao }) {
           icone={<Icone nome="ciclos" tamanho={14} />}
         >
           <Comparativo
-            respostas={respostas}
+            respostas={respostasElegiveis}
             projetos={projetosElegiveis}
             ciclosComparados={ciclosComparados}
           />
@@ -591,7 +598,7 @@ export function DashboardClient({ sessao }: { sessao: Sessao }) {
             }
           >
             <IncidenciaComparativa
-              respostas={respostas}
+              respostas={respostasElegiveis}
               projetos={projetosElegiveis}
               filtros={filtros}
               anterior={cicloAnterior}
@@ -638,14 +645,14 @@ export function DashboardClient({ sessao }: { sessao: Sessao }) {
             </div>
           </div>
 
-          {!respostasFiltradas.length && respostas.length ? (
+          {!respostasFiltradas.length && respostasElegiveis.length ? (
             // Sem isto, "nenhuma resposta" e indistinguivel de "o sistema nao
             // leu o banco" — foi exatamente a leitura que o painel provocou
             // quando abriu num ciclo recem-criado.
             <div className="aviso-box info" style={{ margin: "14px 16px" }}>
               <Icone nome="info" tamanho={16} />
               <div>
-                Nenhuma resposta neste recorte, mas há <strong>{respostas.length}</strong> no
+                Nenhuma resposta neste recorte, mas há <strong>{respostasElegiveis.length}</strong> no
                 período carregado. Ajuste os filtros — o de <strong>Ciclo</strong> costuma ser o
                 que esconde.
               </div>

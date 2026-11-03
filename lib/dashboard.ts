@@ -113,6 +113,9 @@ export interface Resposta {
    *  "código — nome; ...". Nulo = resposta de um projeto só. */
   grupo_projetos: string | null;
   semProjeto: boolean;
+  /** Projeto elegivel no ciclo da resposta. So resposta de projeto elegivel
+   *  entra nas contas do painel; sem vinculo com projeto, nao e. */
+  projetoElegivel: boolean;
   /** Chave de contagem herdada do projeto vinculado — NUNCA da resposta crua.
    *  E ela que decide o que conta como "projeto respondido". */
   projetoContagemKey: string | null;
@@ -360,6 +363,7 @@ export function processarRespostas(
       respondente_id: row.respondente_id ?? null,
       grupo_projetos: typeof row.grupo_projetos === "string" ? row.grupo_projetos : null,
       semProjeto: !pm,
+      projetoElegivel: Boolean(pm) && pm!.elegivel !== false,
       projetoContagemKey: pm ? chaveDoProjeto(pm) : null,
     };
   });
