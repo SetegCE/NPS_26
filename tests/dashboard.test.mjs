@@ -15,6 +15,7 @@ import {
   categoriaDaNota,
   classificarCanal,
   chaveDoProjeto,
+  codigoComparavel,
   comLiderAtual,
   normalizar,
   processarRespostas,
@@ -61,6 +62,27 @@ describe("normalizar", () => {
 describe("chaveDoProjeto", () => {
   test("e ciclo + codigo, normalizados", () => {
     assert.equal(chaveDoProjeto({ ciclo: "2026.1", codigo_clockify: "ck-1" }), "2026.1||CK-1");
+  });
+
+  test("o mesmo codigo escrito de dois jeitos e o mesmo projeto", () => {
+    // Clockrview x planilha antiga: o caso real do ciclo 2026.2.
+    assert.equal(
+      chaveDoProjeto({ ciclo: "2026.2", codigo_clockify: "0221-02-2025" }),
+      chaveDoProjeto({ ciclo: "2026.2", codigo_clockify: "#0221-2-2025" })
+    );
+    assert.equal(codigoComparavel(" #0000-01-0000 "), codigoComparavel("0000-1-0000"));
+    assert.notEqual(codigoComparavel("0221-02-2025"), codigoComparavel("0221-03-2025"));
+    assert.notEqual(codigoComparavel("CK-1"), codigoComparavel("XY-1"));
+  });
+
+  test("resposta com codigo em outro formato conta como projeto respondido", () => {
+    const ps = comLiderAtual([projeto({ ciclo: "2026.2", codigo_clockify: "#0221-2-2025" })]);
+    const rs = processarRespostas(
+      [resposta({ ciclo: "2026.2", codigo_clockify: "0221-02-2025" })],
+      ps
+    );
+    assert.equal(rs[0].semProjeto, false);
+    assert.equal(calcularMetricas(rs, ps).projetosRespondidos, 1);
   });
 
   test("o mesmo codigo em ciclos diferentes sao projetos diferentes", () => {

@@ -6,7 +6,7 @@
 // Ignora o filtro de CICLO de proposito — comparar dois ciclos exige os dois.
 // Todos os demais filtros valem.
 
-import { normalizar, type Projeto, type Resposta } from "@/lib/dashboard";
+import { codigoComparavel, normalizar, type Projeto, type Resposta } from "@/lib/dashboard";
 import { usePaginacaoLocal } from "@/componentes/Paginacao";
 import type { Filtros } from "./filtros";
 
@@ -98,7 +98,7 @@ export function IncidenciaComparativa({
   const proj261 = new Map<string, Projeto>();
   for (const p of projetos) {
     if (!casaProjeto(p)) continue;
-    const ck = normalizar(p.codigo_clockify);
+    const ck = codigoComparavel(p.codigo_clockify);
     if (!ck) continue;
     if (p.ciclo === ANTERIOR && !proj252.has(ck)) proj252.set(ck, p);
     else if (p.ciclo === ATUAL && !proj261.has(ck)) proj261.set(ck, p);
@@ -109,7 +109,7 @@ export function IncidenciaComparativa({
   for (const d of respostas) {
     if (!d.respostaValida || !d.codigo_clockify) continue;
     if (!casaResposta(d)) continue;
-    const ck = normalizar(d.codigo_clockify);
+    const ck = codigoComparavel(d.codigo_clockify);
     if (d.ciclo === ANTERIOR) res252.add(ck);
     else if (d.ciclo === ATUAL) res261.add(ck);
   }

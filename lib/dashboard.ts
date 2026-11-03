@@ -131,7 +131,24 @@ export function chaveDoProjeto(item: {
   ciclo?: string | null;
   codigo_clockify?: string | null;
 }): string {
-  return `${normalizar(item.ciclo)}||${normalizar(item.codigo_clockify)}`;
+  return `${normalizar(item.ciclo)}||${codigoComparavel(item.codigo_clockify)}`;
+}
+
+/**
+ * Codigo do projeto pronto para comparar. O Clockrview escreve "0221-02-2025";
+ * o cadastro antigo, vindo da planilha, "#0221-2-2025". Sao o mesmo projeto:
+ * compara-se trecho a trecho, sem simbolos e sem zeros a esquerda — como
+ * chaveCodigo() em lib/clockrview.ts (que nao pode ser importada aqui porque
+ * este modulo tambem roda no navegador). Diferente dela, as letras ficam:
+ * "CK-1" e "XY-1" continuam sendo projetos diferentes.
+ */
+export function codigoComparavel(codigo: unknown): string {
+  return normalizar(codigo)
+    .replace(/[^A-Z0-9-]/g, "")
+    .split("-")
+    .filter(Boolean)
+    .map((p) => (/^\d+$/.test(p) ? String(parseInt(p, 10)) : p))
+    .join("-");
 }
 
 export const chaveValida = (k: string) => Boolean(k) && k !== "||";
@@ -169,7 +186,7 @@ export function comLiderAtual(projetos: ProjetoBruto[]): Projeto[] {
 
   const porCodigo = new Map<string, ProjetoBruto[]>();
   for (const p of projetos) {
-    const ck = normalizar(p.codigo_clockify);
+    const ck = codigoComparavel(p.codigo_clockify);
     if (!ck || ck === "NULL" || ck === "UNDEFINED") continue;
     const lista = porCodigo.get(ck);
     if (lista) lista.push(p);
@@ -185,7 +202,7 @@ export function comLiderAtual(projetos: ProjetoBruto[]): Projeto[] {
   });
 
   return projetos.map((p) => {
-    const ck = normalizar(p.codigo_clockify);
+    const ck = codigoComparavel(p.codigo_clockify);
     const temCodigo = ck && ck !== "NULL" && ck !== "UNDEFINED";
     return {
       ...p,
