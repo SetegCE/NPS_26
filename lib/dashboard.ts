@@ -137,7 +137,7 @@ export function chaveDoProjeto(item: {
 export const chaveValida = (k: string) => Boolean(k) && k !== "||";
 
 /** Chave pelos ids: projeto_id + ciclo_id. Nula se faltar um dos dois. */
-function chaveDosIds(item: { projeto_id?: unknown; ciclo_id?: unknown }): string | null {
+function chaveDosIds(item: Record<string, unknown>): string | null {
   return item.projeto_id && item.ciclo_id ? `${item.ciclo_id}||${item.projeto_id}` : null;
 }
 
