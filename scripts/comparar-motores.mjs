@@ -15,6 +15,8 @@ import { carregarEnv } from "./comum.mjs";
 
 carregarEnv();
 const URL_PG = process.env.DATABASE_URL;
+// lib/db.ts so usa o PostgREST com esta liberacao explicita.
+process.env.NPS_PERMITIR_SUPABASE = "true";
 if (!URL_PG || !process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
   console.error(
     "\n  ✖ Precisa de DATABASE_URL, SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no .env.local\n"

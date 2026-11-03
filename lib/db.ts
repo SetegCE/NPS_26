@@ -2,7 +2,8 @@
 //
 //  - DATABASE_URL definida -> Postgres direto (lib/dbPostgres.ts). E o modo do
 //    servidor proprio, onde nao ha a API REST do Supabase.
-//  - senao -> PostgREST do Supabase (SUPABASE_URL + service_role), como antes.
+//  - senao -> erro CONFIG_AUSENTE. O PostgREST do Supabase so roda com
+//    NPS_PERMITIR_SUPABASE=true (comparacao de motores na maquina de dev).
 //
 // As rotas nao sabem qual motor esta ativo: `selecionar`, `inserir`,
 // `atualizar` e `rpc` devolvem o mesmo formato nos dois, e os erros passam
@@ -30,7 +31,7 @@ import {
   pgSelecionar,
 } from "@/lib/dbPostgres";
 
-/** Postgres direto quando ha DATABASE_URL; PostgREST do Supabase, senao. */
+/** Postgres direto quando ha DATABASE_URL; senao, erro (ver requisitar). */
 const usaPostgres = () => Boolean(process.env.DATABASE_URL);
 
 /** Roda no motor Postgres traduzindo a falha como a do PostgREST. */
@@ -81,6 +82,19 @@ async function requisitar<T = unknown>(
   caminho: string,
   opcoes: OpcoesRequisicao = {}
 ): Promise<RespostaDb<T>> {
+  // Desde a ida para o servidor proprio, TODO dado vem do banco do servidor.
+  // Sem DATABASE_URL o sistema para aqui, com erro claro, em vez de cair
+  // calado no Supabase — que pode ainda estar na .env com dados velhos.
+  // O caminho PostgREST abaixo so roda com NPS_PERMITIR_SUPABASE=true, para
+  // comparar os motores (scripts/comparar-motores.mjs) na maquina de dev.
+  if (process.env.NPS_PERMITIR_SUPABASE !== "true") {
+    throw erro(
+      500,
+      "CONFIG_AUSENTE",
+      "Falta configurar DATABASE_URL no servidor: o sistema só lê o banco do servidor."
+    );
+  }
+
   const { url, chave } = config();
   if (!url || !chave) {
     const faltando = [!url && "SUPABASE_URL", !chave && "SUPABASE_SERVICE_ROLE_KEY"]
