@@ -519,8 +519,6 @@ export function DashboardClient({ sessao }: { sessao: Sessao }) {
             campo="canal"
             titulo="Canal de Resposta"
             fixos={[
-              { valor: "EMAIL (PMO)", rotulo: "Email" },
-              { valor: "VIA LÍDER", rotulo: "WhatsApp" },
               { valor: "EMAIL", rotulo: "Email (legado)" },
               { valor: "WHATSAPP", rotulo: "WhatsApp (legado)" },
             ]}
